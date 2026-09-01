@@ -506,17 +506,6 @@ def run_portfolio_analysis():
     return result
 
 
-# ============================================================
-# ROOT
-# ============================================================
-
-@app.get("/")
-def root():
-
-    return {
-        "message": "AI Portfolio API is running"
-    }
-
 # Health check endpoint
 @app.get("/healthz")
 def healthz():
@@ -931,4 +920,35 @@ def chat(request: ChatRequest):
                 f"Could not answer question: "
                 f"{error}"
             )
+        )
+# ============================================================
+# REACT FRONTEND
+# ============================================================
+
+if FRONTEND_DIST.exists():
+
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse(
+            FRONTEND_DIST / "index.html"
+        )
+
+    app.mount(
+        "/assets",
+        StaticFiles(
+            directory=FRONTEND_DIST / "assets"
+        ),
+        name="assets"
+    )
+
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+
+        requested_file = FRONTEND_DIST / full_path
+
+        if requested_file.exists() and requested_file.is_file():
+            return FileResponse(requested_file)
+
+        return FileResponse(
+            FRONTEND_DIST / "index.html"
         )

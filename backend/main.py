@@ -7,6 +7,8 @@ import os
 import subprocess
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 
@@ -14,11 +16,11 @@ from pydantic import BaseModel
 # PROJECT PATHS
 # ============================================================
 
-# main.py is inside the backend/API folder.
-# The project root is one level above it.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Make project root importable
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+
+
 sys.path.insert(0, str(BASE_DIR))
 
 
@@ -515,7 +517,10 @@ def root():
         "message": "AI Portfolio API is running"
     }
 
-
+# Health check endpoint
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
 # ============================================================
 # PORTFOLIO
 # ============================================================

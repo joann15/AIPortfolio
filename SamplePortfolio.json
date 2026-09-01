@@ -1,0 +1,147 @@
+{
+  "portfolio": {
+    "account_id": "ACC-548902-US",
+    "currency": "USD",
+    "last_updated": "2026-08-14T17:53:12Z",
+    "summary": {
+      "total_originally_invested": 169300.00,
+      "total_current_value": 255644.60,
+      "total_return_amount": 86344.60,
+      "total_return_percentage": 51.00
+    },
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "company_name": "Apple Inc.",
+        "shares_owned": 100,
+        "average_purchase_price": 220.00,
+        "current_market_price": 305.26,
+        "originally_invested_amount": 22000.00,
+        "current_value": 30526.00,
+        "current_return_amount": 8526.00,
+        "current_return_percentage": 38.75
+      },
+      {
+        "ticker": "MSFT",
+        "company_name": "Microsoft Corporation",
+        "shares_owned": 50,
+        "average_purchase_price": 350.00,
+        "current_market_price": 496.88,
+        "originally_invested_amount": 17500.00,
+        "current_value": 24844.00,
+        "current_return_amount": 7344.00,
+        "current_return_percentage": 41.97
+      },
+      {
+        "ticker": "NVDA",
+        "company_name": "NVIDIA Corporation",
+        "shares_owned": 150,
+        "average_purchase_price": 80.00,
+        "current_market_price": 200.00,
+        "originally_invested_amount": 12000.00,
+        "current_value": 30000.00,
+        "current_return_amount": 18000.00,
+        "current_return_percentage": 150.00
+      },
+      {
+        "ticker": "GOOGL",
+        "company_name": "Alphabet Inc.",
+        "shares_owned": 80,
+        "average_purchase_price": 250.00,
+        "current_market_price": 353.47,
+        "originally_invested_amount": 20000.00,
+        "current_value": 28277.60,
+        "current_return_amount": 8277.60,
+        "current_return_percentage": 41.39
+      },
+      {
+        "ticker": "AMZN",
+        "company_name": "Amazon.com, Inc.",
+        "shares_owned": 100,
+        "average_purchase_price": 150.00,
+        "current_market_price": 265.13,
+        "originally_invested_amount": 15000.00,
+        "current_value": 26513.00,
+        "current_return_amount": 11513.00,
+        "current_return_percentage": 76.75
+      },
+      {
+        "ticker": "META",
+        "company_name": "Meta Platforms, Inc.",
+        "shares_owned": 40,
+        "average_purchase_price": 300.00,
+        "current_market_price": 592.10,
+        "originally_invested_amount": 12000.00,
+        "current_value": 23684.00,
+        "current_return_amount": 11684.00,
+        "current_return_percentage": 97.37
+      },
+      {
+        "ticker": "TSLA",
+        "company_name": "Tesla, Inc.",
+        "shares_owned": 50,
+        "average_purchase_price": 200.00,
+        "current_market_price": 250.00,
+        "originally_invested_amount": 10000.00,
+        "current_value": 12500.00,
+        "current_return_amount": 2500.00,
+        "current_return_percentage": 25.00
+      },
+      {
+        "ticker": "LLY",
+        "company_name": "Eli Lilly and Company",
+        "shares_owned": 20,
+        "average_purchase_price": 600.00,
+        "current_market_price": 950.00,
+        "originally_invested_amount": 12000.00,
+        "current_value": 19000.00,
+        "current_return_amount": 7000.00,
+        "current_return_percentage": 58.33
+      },
+      {
+        "ticker": "JPM",
+        "company_name": "JPMorgan Chase & Co.",
+        "shares_owned": 60,
+        "average_purchase_price": 180.00,
+        "current_market_price": 240.00,
+        "originally_invested_amount": 10800.00,
+        "current_value": 14400.00,
+        "current_return_amount": 3600.00,
+        "current_return_percentage": 33.33
+      },
+      {
+        "ticker": "V",
+        "company_name": "Visa Inc.",
+        "shares_owned": 40,
+        "average_purchase_price": 250.00,
+        "current_market_price": 310.00,
+        "originally_invested_amount": 10000.00,
+        "current_value": 12400.00,
+        "current_return_amount": 2400.00,
+        "current_return_percentage": 24.00
+      },
+      {
+        "ticker": "JNJ",
+        "company_name": "Johnson & Johnson",
+        "shares_owned": 100,
+        "average_purchase_price": 160.00,
+        "current_market_price": 175.00,
+        "originally_invested_amount": 16000.00,
+        "current_value": 17500.00,
+        "current_return_amount": 1500.00,
+        "current_return_percentage": 9.38
+      },
+      {
+        "ticker": "AVGO",
+        "company_name": "Broadcom Inc.",
+        "shares_owned": 10,
+        "average_purchase_price": 1200.00,
+        "current_market_price": 1600.00,
+        "originally_invested_amount": 12000.00,
+        "current_value": 16000.00,
+        "current_return_amount": 4000.00,
+        "current_return_percentage": 33.33
+      }
+    ]
+  }
+}

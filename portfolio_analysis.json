@@ -1,0 +1,522 @@
+{
+    "generated_at": "2026-09-01T06:03:09.992112+00:00",
+    "portfolio": {
+        "account_id": "ACC-548902-US",
+        "currency": "USD"
+    },
+    "portfolio_summary": {
+        "previous_portfolio_value": 275912.8,
+        "current_portfolio_value": 274541.6,
+        "total_daily_impact": -1371.2,
+        "daily_change_percent": -0.497,
+        "holdings_analyzed": 12,
+        "holdings_skipped": 0,
+        "skipped_tickers": []
+    },
+    "news_strip": {
+        "max_holdings": 5,
+        "focus_tickers": [
+            "TSLA",
+            "AMZN",
+            "GOOGL",
+            "NVDA",
+            "LLY"
+        ],
+        "articles": [
+            {
+                "ticker": "TSLA",
+                "company_name": "Tesla, Inc.",
+                "impact": 960.0,
+                "daily_change_percent": 5.5054,
+                "title": "Tesla's Stock (TSLA) Rises Amid Anticipation for Autonomous Driving Advancements",
+                "source": "gurufocus.com",
+                "published_at": "2026-09-01T05:11:33.000000Z",
+                "url": "https://www.gurufocus.com/news/9061080/teslas-stock-tsla-rises-amid-anticipation-for-autonomous-driving-advancements",
+                "sentiment": 0.534325,
+                "sentiment_direction": "positive",
+                "market_alignment": "aligned_positive",
+                "identified_forces": [],
+                "match_strength": "strong",
+                "has_news": true,
+                "explanation": "TSLA +5.51% — recent coverage is positive and consistent with the move."
+            },
+            {
+                "ticker": "AMZN",
+                "company_name": "Amazon.com, Inc.",
+                "impact": -666.0,
+                "daily_change_percent": -2.4997,
+                "title": "FTC Lawsuit Puts Amazon’s (AMZN) High-Margin Advertising Business in Focus",
+                "source": "insidermonkey.com",
+                "published_at": "2026-08-31T23:50:57.000000Z",
+                "url": "https://www.insidermonkey.com/blog/ftc-lawsuit-puts-amazons-amzn-high-margin-advertising-business-in-focus-1825363/",
+                "sentiment": 0.253871,
+                "sentiment_direction": "positive",
+                "market_alignment": "conflicting",
+                "identified_forces": [
+                    "Regulation",
+                    "Interest rates / monetary policy"
+                ],
+                "match_strength": "strong",
+                "has_news": true,
+                "explanation": "AMZN -2.50% — coverage highlights regulation, interest rates / monetary policy, but article sentiment conflicts with the price direction."
+            },
+            {
+                "ticker": "GOOGL",
+                "company_name": "Alphabet Inc.",
+                "impact": -579.2,
+                "daily_change_percent": -2.0889,
+                "title": null,
+                "source": null,
+                "published_at": null,
+                "url": null,
+                "sentiment": null,
+                "sentiment_direction": "unknown",
+                "market_alignment": "unknown",
+                "identified_forces": [],
+                "match_strength": null,
+                "has_news": false,
+                "explanation": "GOOGL -2.09% — no relevant news explanation found for this move."
+            },
+            {
+                "ticker": "NVDA",
+                "company_name": "NVIDIA Corporation",
+                "impact": 484.5,
+                "daily_change_percent": 1.4847,
+                "title": null,
+                "source": null,
+                "published_at": null,
+                "url": null,
+                "sentiment": null,
+                "sentiment_direction": "unknown",
+                "market_alignment": "unknown",
+                "identified_forces": [],
+                "match_strength": null,
+                "has_news": false,
+                "explanation": "NVDA +1.48% — no relevant news explanation found for this move."
+            },
+            {
+                "ticker": "LLY",
+                "company_name": "Eli Lilly and Company",
+                "impact": -357.6,
+                "daily_change_percent": -1.5222,
+                "title": "Eli Lilly (LLY) Makes a $2.88 Billion Autoimmune Bet. What Could Go Right or Wrong?",
+                "source": "insidermonkey.com",
+                "published_at": "2026-08-31T23:44:35.000000Z",
+                "url": "https://www.insidermonkey.com/blog/eli-lilly-lly-makes-a-2-88-billion-autoimmune-bet-what-could-go-right-or-wrong-1825267/",
+                "sentiment": 0.47998,
+                "sentiment_direction": "positive",
+                "market_alignment": "conflicting",
+                "identified_forces": [
+                    "Corporate / strategic activity"
+                ],
+                "match_strength": "strong",
+                "has_news": true,
+                "explanation": "LLY -1.52% — coverage highlights corporate / strategic activity, but article sentiment conflicts with the price direction."
+            }
+        ]
+    },
+    "top_positive_contributors": [
+        {
+            "ticker": "TSLA",
+            "impact": 960.0
+        },
+        {
+            "ticker": "NVDA",
+            "impact": 484.5
+        },
+        {
+            "ticker": "AVGO",
+            "impact": 15.5
+        }
+    ],
+    "top_negative_contributors": [
+        {
+            "ticker": "V",
+            "impact": -89.2
+        },
+        {
+            "ticker": "JPM",
+            "impact": -96.0
+        },
+        {
+            "ticker": "JNJ",
+            "impact": -219.0
+        },
+        {
+            "ticker": "META",
+            "impact": -227.2
+        },
+        {
+            "ticker": "AAPL",
+            "impact": -285.0
+        }
+    ],
+    "sector_summary": {
+        "Technology": {
+            "holdings": [
+                "AAPL",
+                "MSFT",
+                "NVDA",
+                "AVGO"
+            ],
+            "previous_value": 93966.9,
+            "current_value": 93869.9,
+            "daily_impact": -97.0,
+            "daily_return_percent": -0.1032,
+            "forces": {}
+        },
+        "Communication Services": {
+            "holdings": [
+                "GOOGL",
+                "META"
+            ],
+            "previous_value": 50848.0,
+            "current_value": 50041.6,
+            "daily_impact": -806.4,
+            "daily_return_percent": -1.5859,
+            "forces": {}
+        },
+        "Consumer Discretionary": {
+            "holdings": [
+                "AMZN",
+                "TSLA"
+            ],
+            "previous_value": 44080.5,
+            "current_value": 44374.5,
+            "daily_impact": 294.0,
+            "daily_return_percent": 0.667,
+            "forces": {}
+        },
+        "Healthcare": {
+            "holdings": [
+                "LLY",
+                "JNJ"
+            ],
+            "previous_value": 50296.2,
+            "current_value": 49719.6,
+            "daily_impact": -576.6,
+            "daily_return_percent": -1.1464,
+            "forces": {}
+        },
+        "Financials": {
+            "holdings": [
+                "JPM",
+                "V"
+            ],
+            "previous_value": 36721.2,
+            "current_value": 36536.0,
+            "daily_impact": -185.2,
+            "daily_return_percent": -0.5043,
+            "forces": {}
+        }
+    },
+    "holdings": [
+        {
+            "ticker": "AAPL",
+            "company_name": "Apple Inc.",
+            "sector": "Technology",
+            "shares_owned": 100.0,
+            "market_data": {
+                "current_price": 316.85,
+                "previous_price": 319.7,
+                "daily_change_percent": -0.8915,
+                "previous_value": 31970.0,
+                "current_value": 31685.0,
+                "daily_change_amount": -285.0,
+                "portfolio_impact": -285.0
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        },
+        {
+            "ticker": "MSFT",
+            "company_name": "Microsoft Corporation",
+            "sector": "Technology",
+            "shares_owned": 50.0,
+            "market_data": {
+                "current_price": 507.29,
+                "previous_price": 513.53,
+                "daily_change_percent": -1.2151,
+                "previous_value": 25676.5,
+                "current_value": 25364.5,
+                "daily_change_amount": -312.0,
+                "portfolio_impact": -312.0
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        },
+        {
+            "ticker": "NVDA",
+            "company_name": "NVIDIA Corporation",
+            "sector": "Technology",
+            "shares_owned": 150.0,
+            "market_data": {
+                "current_price": 220.78,
+                "previous_price": 217.55,
+                "daily_change_percent": 1.4847,
+                "previous_value": 32632.5,
+                "current_value": 33117.0,
+                "daily_change_amount": 484.5,
+                "portfolio_impact": 484.5
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": true,
+            "news_match_tier": null,
+            "news_status": "No sufficiently relevant Marketaux article was found for the selected lookback windows."
+        },
+        {
+            "ticker": "GOOGL",
+            "company_name": "Alphabet Inc.",
+            "sector": "Communication Services",
+            "shares_owned": 80.0,
+            "market_data": {
+                "current_price": 339.35,
+                "previous_price": 346.59,
+                "daily_change_percent": -2.0889,
+                "previous_value": 27727.2,
+                "current_value": 27148.0,
+                "daily_change_amount": -579.2,
+                "portfolio_impact": -579.2
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": true,
+            "news_match_tier": null,
+            "news_status": "No sufficiently relevant Marketaux article was found for the selected lookback windows."
+        },
+        {
+            "ticker": "AMZN",
+            "company_name": "Amazon.com, Inc.",
+            "sector": "Consumer Discretionary",
+            "shares_owned": 100.0,
+            "market_data": {
+                "current_price": 259.77,
+                "previous_price": 266.43,
+                "daily_change_percent": -2.4997,
+                "previous_value": 26643.0,
+                "current_value": 25977.0,
+                "daily_change_amount": -666.0,
+                "portfolio_impact": -666.0
+            },
+            "financial_news": [
+                {
+                    "title": "FTC Lawsuit Puts Amazon’s (AMZN) High-Margin Advertising Business in Focus",
+                    "source": "insidermonkey.com",
+                    "published_at": "2026-08-31T23:50:57.000000Z",
+                    "description": "The U.S. Federal Trade Commission, joined by 22 states, has sued Amazon.com, Inc.",
+                    "url": "https://www.insidermonkey.com/blog/ftc-lawsuit-puts-amazons-amzn-high-margin-advertising-business-in-focus-1825363/",
+                    "sentiment": 0.253871,
+                    "sentiment_direction": "positive",
+                    "relevance_score": 0.682,
+                    "market_alignment": "conflicting",
+                    "identified_forces": [
+                        "Regulation",
+                        "Interest rates / monetary policy"
+                    ],
+                    "match_strength": "strong"
+                }
+            ],
+            "identified_forces": [
+                "Regulation",
+                "Interest rates / monetary policy"
+            ],
+            "news_analyzed": true,
+            "news_match_tier": "strong",
+            "news_status": "relevant_news_found"
+        },
+        {
+            "ticker": "META",
+            "company_name": "Meta Platforms, Inc.",
+            "sector": "Communication Services",
+            "shares_owned": 40.0,
+            "market_data": {
+                "current_price": 572.34,
+                "previous_price": 578.02,
+                "daily_change_percent": -0.9827,
+                "previous_value": 23120.8,
+                "current_value": 22893.6,
+                "daily_change_amount": -227.2,
+                "portfolio_impact": -227.2
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        },
+        {
+            "ticker": "TSLA",
+            "company_name": "Tesla, Inc.",
+            "sector": "Consumer Discretionary",
+            "shares_owned": 50.0,
+            "market_data": {
+                "current_price": 367.95,
+                "previous_price": 348.75,
+                "daily_change_percent": 5.5054,
+                "previous_value": 17437.5,
+                "current_value": 18397.5,
+                "daily_change_amount": 960.0,
+                "portfolio_impact": 960.0
+            },
+            "financial_news": [
+                {
+                    "title": "Tesla's Stock (TSLA) Rises Amid Anticipation for Autonomous Driving Advancements",
+                    "source": "gurufocus.com",
+                    "published_at": "2026-09-01T05:11:33.000000Z",
+                    "description": "On August 31, 2026, Tesla's stock (TSLA) experienced a notable increase of 5.5%, closing at $367.95, as investors await updates on the company's autonomous driv",
+                    "url": "https://www.gurufocus.com/news/9061080/teslas-stock-tsla-rises-amid-anticipation-for-autonomous-driving-advancements",
+                    "sentiment": 0.534325,
+                    "sentiment_direction": "positive",
+                    "relevance_score": 0.682,
+                    "market_alignment": "aligned_positive",
+                    "identified_forces": [],
+                    "match_strength": "strong"
+                },
+                {
+                    "title": "TSLA Looks 10.3% Overvalued on GF Value™ as Rally Builds Ahead of Cybercab Event",
+                    "source": "gurufocus.com",
+                    "published_at": "2026-08-31T22:59:12.000000Z",
+                    "description": "On August 31, 2026, Tesla Inc (TSLA) surged nearly 6%, closing at $367.95 and crossing above its 50-day moving average amid heightened investor anticipation for",
+                    "url": "https://www.gurufocus.com/news/9060760/tsla-looks-103-overvalued-on-gf-value-as-rally-builds-ahead-of-cybercab-event",
+                    "sentiment": 0.362275,
+                    "sentiment_direction": "positive",
+                    "relevance_score": 0.682,
+                    "market_alignment": "aligned_positive",
+                    "identified_forces": [],
+                    "match_strength": "strong"
+                }
+            ],
+            "identified_forces": [],
+            "news_analyzed": true,
+            "news_match_tier": "strong",
+            "news_status": "relevant_news_found"
+        },
+        {
+            "ticker": "LLY",
+            "company_name": "Eli Lilly and Company",
+            "sector": "Healthcare",
+            "shares_owned": 20.0,
+            "market_data": {
+                "current_price": 1156.73,
+                "previous_price": 1174.61,
+                "daily_change_percent": -1.5222,
+                "previous_value": 23492.2,
+                "current_value": 23134.6,
+                "daily_change_amount": -357.6,
+                "portfolio_impact": -357.6
+            },
+            "financial_news": [
+                {
+                    "title": "Eli Lilly (LLY) Makes a $2.88 Billion Autoimmune Bet. What Could Go Right or Wrong?",
+                    "source": "insidermonkey.com",
+                    "published_at": "2026-08-31T23:44:35.000000Z",
+                    "description": "Eli Lilly and Company (NYSE:LLY) has agreed to acquire privately held Merida Biosciences for up to $2.875 billion in cash, including an upfront payment and milestone-based payments.",
+                    "url": "https://www.insidermonkey.com/blog/eli-lilly-lly-makes-a-2-88-billion-autoimmune-bet-what-could-go-right-or-wrong-1825267/",
+                    "sentiment": 0.47998,
+                    "sentiment_direction": "positive",
+                    "relevance_score": 0.864,
+                    "market_alignment": "conflicting",
+                    "identified_forces": [
+                        "Corporate / strategic activity"
+                    ],
+                    "match_strength": "strong"
+                },
+                {
+                    "title": "LLY Looks 24.4% Undervalued on GF Value™ Amid Obesity Treatment Market Surge",
+                    "source": "gurufocus.com",
+                    "published_at": "2026-08-31T19:59:02.000000Z",
+                    "description": "On August 31, 2026, the obesity treatment sector is witnessing accelerated competition as oral GLP-1 formulations gain market traction faster than anticipated.",
+                    "url": "https://www.gurufocus.com/news/9060512/lly-looks-244-undervalued-on-gf-value-amid-obesity-treatment-market-surge",
+                    "sentiment": 0.172833,
+                    "sentiment_direction": "positive",
+                    "relevance_score": 0.5,
+                    "market_alignment": "conflicting",
+                    "identified_forces": [
+                        "Healthcare / drug developments"
+                    ],
+                    "match_strength": "strong"
+                }
+            ],
+            "identified_forces": [
+                "Corporate / strategic activity",
+                "Healthcare / drug developments"
+            ],
+            "news_analyzed": true,
+            "news_match_tier": "strong",
+            "news_status": "relevant_news_found"
+        },
+        {
+            "ticker": "JPM",
+            "company_name": "JPMorgan Chase & Co.",
+            "sector": "Financials",
+            "shares_owned": 60.0,
+            "market_data": {
+                "current_price": 356.02,
+                "previous_price": 357.62,
+                "daily_change_percent": -0.4474,
+                "previous_value": 21457.2,
+                "current_value": 21361.2,
+                "daily_change_amount": -96.0,
+                "portfolio_impact": -96.0
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        },
+        {
+            "ticker": "V",
+            "company_name": "Visa Inc.",
+            "sector": "Financials",
+            "shares_owned": 40.0,
+            "market_data": {
+                "current_price": 379.37,
+                "previous_price": 381.6,
+                "daily_change_percent": -0.5844,
+                "previous_value": 15264.0,
+                "current_value": 15174.8,
+                "daily_change_amount": -89.2,
+                "portfolio_impact": -89.2
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        },
+        {
+            "ticker": "JNJ",
+            "company_name": "Johnson & Johnson",
+            "sector": "Healthcare",
+            "shares_owned": 100.0,
+            "market_data": {
+                "current_price": 265.85,
+                "previous_price": 268.04,
+                "daily_change_percent": -0.817,
+                "previous_value": 26804.0,
+                "current_value": 26585.0,
+                "daily_change_amount": -219.0,
+                "portfolio_impact": -219.0
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        },
+        {
+            "ticker": "AVGO",
+            "company_name": "Broadcom Inc.",
+            "sector": "Technology",
+            "shares_owned": 10.0,
+            "market_data": {
+                "current_price": 370.34,
+                "previous_price": 368.79,
+                "daily_change_percent": 0.4203,
+                "previous_value": 3687.9,
+                "current_value": 3703.4,
+                "daily_change_amount": 15.5,
+                "portfolio_impact": 15.5
+            },
+            "financial_news": [],
+            "identified_forces": [],
+            "news_analyzed": false
+        }
+    ]
+}

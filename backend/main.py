@@ -1,4 +1,3 @@
-from os import error
 from pathlib import Path
 import sys
 import json
@@ -13,6 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from pwdlib import PasswordHash
 
@@ -32,6 +32,8 @@ JWT_SECRET = os.getenv(
 )
 
 JWT_ALGORITHM = "HS256"
+
+security = HTTPBearer()
 
 # ============================================================
 # PROJECT PATHS
@@ -541,6 +543,53 @@ def run_portfolio_analysis():
 
     return result
 
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(
+            token,
+            JWT_SECRET,
+            algorithms=[JWT_ALGORITHM]
+        )
+
+        user_id = payload.get("user_id")
+
+        if user_id is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authentication token."
+            )
+
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired authentication token."
+        )
+
+    user = (
+        db.query(User)
+        .filter(User.id == user_id)
+        .first()
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User not found."
+        )
+
+    return user
+
+@app.get("/me")
+def get_me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "username": current_user.username
+    }
 
 # Health check endpoint
 @app.get("/healthz")
@@ -900,15 +949,11 @@ async def upload_portfolio(
     print("\nNew portfolio saved:")
     print(PORTFOLIO_FILE)
 
-    # --------------------------------------------------------
     # 8. RUN ANALYZER
-    # --------------------------------------------------------
-
     run_portfolio_analysis()
-    # --------------------------------------------------------
-    # 9. LOAD GENERATED RESULTS + GENERATE NARRATIVE
-    # --------------------------------------------------------
 
+    # 9. LOAD GENERATED RESULTS + GENERATE NARRATIVE
+    
     try:
         analysis = load_json_file(
             ANALYSIS_OUTPUT
@@ -916,12 +961,13 @@ async def upload_portfolio(
         evidence = load_json_file(
             EVIDENCE_OUTPUT
         )
-
         narrative = generate_narrative(
             evidence
         )
-
     except HTTPException:
+        raise
+
+    except Exception as error:
         print("Narrative generation error:")
         print(error)
 
@@ -932,7 +978,7 @@ async def upload_portfolio(
                 f"AI narrative generation failed: {error}"
             )
         )
-
+    
     # --------------------------------------------------------
     # 10. RETURN PROCESSED DATA
     # --------------------------------------------------------

@@ -10,7 +10,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from fastapi import Depends
+import jwt
+from pwdlib import PasswordHash
 
+from database import Base, engine, get_db
+from models import User
+
+
+# ============================================================
+# AUTHENTICATION
+# ============================================================
+
+password_hash = PasswordHash.recommended()
+
+JWT_SECRET = os.getenv(
+    "JWT_SECRET",
+    "change-this-secret"
+)
+
+JWT_ALGORITHM = "HS256"
 
 # ============================================================
 # PROJECT PATHS
@@ -62,6 +83,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
+
+Base.metadata.create_all(bind=engine)
+
 
 # ============================================================
 # CORS
@@ -91,6 +118,15 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     question: str
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 
 # ============================================================
@@ -589,6 +625,110 @@ def get_narrative():
         NARRATIVE_OUTPUT
     )
 
+# ============================================================
+# REGISTER
+# ============================================================
+
+@app.post("/register")
+def register(
+    request: RegisterRequest,
+    db: Session = Depends(get_db)
+):
+    username = request.username.strip()
+
+    if not username:
+        raise HTTPException(
+            status_code=400,
+            detail="Username cannot be empty."
+        )
+
+    if len(request.password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 6 characters."
+        )
+
+    existing_user = (
+        db.query(User)
+        .filter(User.username == username)
+        .first()
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists."
+        )
+
+    hashed_password = password_hash.hash(
+        request.password
+    )
+
+    user = User(
+        username=username,
+        password_hash=hashed_password
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "User registered successfully.",
+        "user_id": user.id,
+        "username": user.username
+    }
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+@app.post("/login")
+def login(
+    request: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    username = request.username.strip()
+
+    user = (
+        db.query(User)
+        .filter(User.username == username)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password."
+        )
+
+    if not password_hash.verify(
+        request.password,
+        user.password_hash
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password."
+        )
+
+    token = jwt.encode(
+        {
+            "user_id": user.id,
+            "username": user.username
+        },
+        JWT_SECRET,
+        algorithm=JWT_ALGORITHM
+    )
+
+    return {
+        "message": "Login successful.",
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username
+        }
+    }
 
 # ============================================================
 # PORTFOLIO UPLOAD

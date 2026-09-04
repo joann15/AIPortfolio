@@ -26,6 +26,20 @@ const SECTOR_COLORS = [
 
 function App() {
   // ============================================================
+  // AUTHENTICATION
+  // ============================================================
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authChecking, setAuthChecking] = useState(true)
+  const [username, setUsername] = useState('')
+  const [authMode, setAuthMode] = useState('login')
+  
+  const [authUsername, setAuthUsername] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
+
+  // ============================================================
   // DATA
   // ============================================================
 
@@ -62,7 +76,157 @@ function App() {
 
   const newsStripArticles =
     analysis?.news_strip?.articles || []
+    
+    async function checkAuthentication() {
+      const token = localStorage.getItem('access_token')
+      
+      if (!token) {
+        setAuthChecking(false)
+        return
+      }
+      
+      try {
+        const response = await fetch(`${API_URL}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        
+        if (!response.ok) {
+          localStorage.removeItem('access_token')
+          setIsAuthenticated(false)
+          setUsername('')
+          return
+        }
+        const data = await response.json()
+        
+        setUsername(data.username)
+        setIsAuthenticated(true)
+      
+      } catch (err) {
+        console.error('Authentication check failed:', err)
 
+        localStorage.removeItem('access_token')
+        setIsAuthenticated(false)
+        setUsername('')
+      } finally {
+        setAuthChecking(false)
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault()
+
+      setAuthLoading(true)
+      setAuthError('')
+
+      try {
+        const response = await fetch(`${API_URL}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: authUsername.trim(),
+            password: authPassword,
+          }),
+        })
+        let data
+
+        try {
+          data = await response.json()
+        } catch {
+          throw new Error('The server returned an invalid response.')
+        }
+        
+        if (!response.ok) {
+          throw new Error(
+            data.detail || 'Invalid username or password.'
+          )
+        }
+        
+        localStorage.setItem(
+          'access_token',
+          data.access_token
+        )
+
+        setUsername(data.user.username)
+        setIsAuthenticated(true)
+
+        setAuthUsername('')
+        setAuthPassword('')
+        setAuthError('')
+      
+      } catch (err) {
+        console.error('Login error:', err)
+        
+        setAuthError(
+          err.message || 'Unable to log in.'
+        )
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    async function handleRegister(event) {
+      event.preventDefault()
+      
+      setAuthLoading(true)
+      setAuthError('')
+      
+      try {
+        const response = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: authUsername.trim(),
+            password: authPassword,
+          }),
+        })
+        
+        let data
+        try {
+          data = await response.json()
+        } catch {
+          throw new Error('The server returned an invalid response.')
+        }
+        
+        if (!response.ok) {
+          throw new Error(
+            data.detail || 'Registration failed.'
+          )
+        }
+      
+        setAuthMode('login')
+        setAuthError('Registration successful. Please log in.')
+        setAuthPassword('')
+      
+      } catch (err) {
+        console.error('Registration error:', err)
+        
+        setAuthError(
+          err.message || 'Unable to register.'
+        )
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('access_token')
+
+      setIsAuthenticated(false)
+      setUsername('')
+      setPortfolio(null)
+      setAnalysis(null)
+      setEvidence(null)
+      setNarrative(null)
+      setAnswer('')
+      setQuestion('')
+    }
+  
   // ============================================================
   // LOAD PORTFOLIO DATA
   // ============================================================
@@ -122,13 +286,9 @@ function App() {
     }
   }
 
-  useEffect(() => {
-  // Intentionally not calling loadPortfolioData() here.
-  // We don't want a page refresh to resurrect the last
-  // uploaded portfolio from disk — every fresh page load
-  // should start empty and wait for a new upload.
-  setPageLoading(false)
-}, [])
+    useEffect(() => {
+      checkAuthentication()
+    }, [])
 
   // ============================================================
   // UPLOAD PORTFOLIO JSON
@@ -493,6 +653,117 @@ function App() {
   const evidenceHoldings =
     evidence?.holding_evidence || []
 
+    // ============================================================
+  // AUTH CHECKING
+  // ============================================================
+
+  if (authChecking) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Checking login...</p>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // LOGIN / REGISTER
+  // ============================================================
+
+  if (!isAuthenticated) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+
+          <h1>AI Portfolio Assistant</h1>
+
+          <p className="auth-subtitle">
+            {authMode === 'login'
+              ? 'Log in to access your portfolio.'
+              : 'Create an account to get started.'}
+          </p>
+
+          <form
+            onSubmit={
+              authMode === 'login'
+                ? handleLogin
+                : handleRegister
+            }
+          >
+
+            <label>
+              Username
+            </label>
+
+            <input
+              type="text"
+              value={authUsername}
+              onChange={(event) =>
+                setAuthUsername(event.target.value)
+              }
+              placeholder="Enter username"
+              required
+              disabled={authLoading}
+            />
+
+            <label>
+              Password
+            </label>
+
+            <input
+              type="password"
+              value={authPassword}
+              onChange={(event) =>
+                setAuthPassword(event.target.value)
+              }
+              placeholder="Enter password"
+              required
+              disabled={authLoading}
+            />
+
+            {authError && (
+              <div className="auth-message">
+                {authError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="auth-button"
+              disabled={authLoading}
+            >
+              {authLoading
+                ? 'Please wait...'
+                : authMode === 'login'
+                  ? 'Login'
+                  : 'Create Account'}
+            </button>
+
+          </form>
+
+          <button
+            type="button"
+            className="auth-switch"
+            onClick={() => {
+              setAuthMode(
+                authMode === 'login'
+                  ? 'register'
+                  : 'login'
+              )
+              setAuthError('')
+            }}
+          >
+            {authMode === 'login'
+              ? 'Need an account? Register'
+              : 'Already have an account? Login'}
+          </button>
+
+        </div>
+      </div>
+    )
+  }
+
+
   // ============================================================
   // INITIAL LOADING
   // ============================================================
@@ -518,14 +789,32 @@ function App() {
       ====================================================== */}
 
       <header className="header">
-        <div className="header-content">
+  <div className="header-content">
 
-          <h1>AI Portfolio Assistant</h1>
+    <div className="header-top">
+      <div>
+        <h1>AI Portfolio Assistant</h1>
 
-          <p>
-            Portfolio overview and AI-powered analysis
-          </p>
+        <p>
+          Portfolio overview and AI-powered analysis
+        </p>
+      </div>
 
+      <div className="user-section">
+        <span>
+          Welcome, {username}
+        </span>
+
+        <button
+          onClick={handleLogout}
+          className="logout-button"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+
+      
           <div className="upload-area">
 
             <p className="upload-instruction">

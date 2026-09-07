@@ -1242,3 +1242,80 @@ button {
   background: #f3f4f6;
 }
 
+/* ============================================================
+   SAVE PORTFOLIO
+   ============================================================ */
+
+.save-portfolio-area {
+  flex-basis: 100%;
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.save-portfolio-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.save-portfolio-form input {
+  width: 280px;
+  height: 42px;
+  padding: 0 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+
+  font-size: 13px;
+  outline: none;
+}
+
+.save-portfolio-form input::placeholder {
+  color: #94a3b8;
+}
+
+.save-portfolio-form input:focus {
+  border-color: #6366f1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.save-portfolio-button {
+  height: 42px;
+  padding: 0 18px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.25);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.save-portfolio-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 9px 20px rgba(22, 163, 74, 0.35);
+}
+
+.save-portfolio-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}

@@ -440,6 +440,12 @@ const savePortfolio = async () => {
       return
     }
 
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      setUploadError('Please log in again.')
+      return
+    }
+
     setUploading(true)
     setUploadError('')
     setError('')
@@ -469,6 +475,9 @@ const savePortfolio = async () => {
         `${API_URL}/portfolio/upload`,
         {
           method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         }
       )

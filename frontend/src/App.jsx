@@ -60,7 +60,7 @@ function App() {
   // PAGE
   // ============================================================
 
-  const [pageLoading, setPageLoading] = useState(true)
+  const [pageLoading, setPageLoading] = useState(false)
   const [error, setError] = useState('')
 
   // ============================================================

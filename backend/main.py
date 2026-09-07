@@ -17,7 +17,7 @@ import jwt
 from pwdlib import PasswordHash
 
 from database import Base, engine, get_db
-from models import User
+from models import User, Portfolio
 
 
 # ============================================================
@@ -129,6 +129,10 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class SavePortfolioRequest(BaseModel):
+    name: str
+    portfolio_data: dict
 
 
 # ============================================================
@@ -778,6 +782,100 @@ def login(
             "username": user.username
         }
     }
+
+
+@app.get("/portfolios")
+def get_saved_portfolios(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    portfolios = (
+        db.query(Portfolio)
+        .filter(Portfolio.user_id == current_user.id)
+        .order_by(
+            Portfolio.updated_at.desc(),
+            Portfolio.created_at.desc()
+        )
+        .all()
+    )
+
+    return {
+        "portfolios": [
+            {
+                "id": portfolio.id,
+                "name": portfolio.name,
+                "created_at": portfolio.created_at,
+                "updated_at": portfolio.updated_at
+            }
+            for portfolio in portfolios
+        ]
+    }
+
+
+@app.post("/portfolios/save")
+def save_portfolio(
+    request: SavePortfolioRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    name = request.name.strip()
+
+    if not name:
+        raise HTTPException(
+            status_code=400,
+            detail="Portfolio name cannot be empty."
+        )
+
+    portfolio = Portfolio(
+        user_id=current_user.id,
+        name=name,
+        portfolio_data=json.dumps(request.portfolio_data)
+    )
+
+    db.add(portfolio)
+    db.commit()
+    db.refresh(portfolio)
+
+    return {
+        "message": "Portfolio saved successfully.",
+        "portfolio": {
+            "id": portfolio.id,
+            "name": portfolio.name,
+            "created_at": portfolio.created_at,
+            "updated_at": portfolio.updated_at
+        }
+    }
+
+
+@app.get("/portfolios/{portfolio_id}")
+def get_saved_portfolio(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    portfolio = (
+        db.query(Portfolio)
+        .filter(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if portfolio is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Portfolio not found."
+        )
+
+    return {
+        "id": portfolio.id,
+        "name": portfolio.name,
+        "portfolio_data": json.loads(portfolio.portfolio_data),
+        "created_at": portfolio.created_at,
+        "updated_at": portfolio.updated_at
+    }
+
 
 # ============================================================
 # PORTFOLIO UPLOAD

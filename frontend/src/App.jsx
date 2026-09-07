@@ -33,6 +33,10 @@ function App() {
   const [authChecking, setAuthChecking] = useState(true)
   const [username, setUsername] = useState('')
   const [authMode, setAuthMode] = useState('login')
+
+  const [savedPortfolios, setSavedPortfolios] = useState([])
+  const [savedPortfoliosLoading, setSavedPortfoliosLoading] = useState(false)
+  const [selectedSavedPortfolio, setSelectedSavedPortfolio] = useState(null)
   
   const [authUsername, setAuthUsername] = useState('')
   const [authPassword, setAuthPassword] = useState('')
@@ -286,9 +290,76 @@ function App() {
     }
   }
 
-    useEffect(() => {
-      checkAuthentication()
-    }, [])
+  const loadSavedPortfolios = async () => {
+  const token = localStorage.getItem('access_token')
+
+  if (!token) {
+    return
+  }
+
+  setSavedPortfoliosLoading(true)
+
+  try {
+    const response = await fetch('/portfolios', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to load saved portfolios.')
+    }
+
+    const data = await response.json()
+
+    setSavedPortfolios(data.portfolios || [])
+  } catch (error) {
+    console.error('Error loading saved portfolios:', error)
+    setSavedPortfolios([])
+  } finally {
+    setSavedPortfoliosLoading(false)
+  }
+}
+
+
+const loadSavedPortfolio = async (portfolioId) => {
+  const token = localStorage.getItem('access_token')
+
+  if (!token) {
+    return
+  }
+
+  try {
+    const response = await fetch(`/portfolios/${portfolioId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to load saved portfolio.')
+    }
+
+    const data = await response.json()
+
+    setSelectedSavedPortfolio(data)
+    setPortfolio(data.portfolio_data)
+  } catch (error) {
+    console.error('Error loading saved portfolio:', error)
+  }
+}
+
+  useEffect(() => {
+    checkAuthentication()
+  }, [])
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadSavedPortfolios()
+    }
+  }, [isAuthenticated])
+
+
 
   // ============================================================
   // UPLOAD PORTFOLIO JSON
@@ -813,6 +884,39 @@ function App() {
         </button>
       </div>
     </div>
+
+    <div className="saved-portfolios">
+  <div className="saved-portfolios-header">
+    <h2>My Saved Portfolios</h2>
+  </div>
+
+  {savedPortfoliosLoading ? (
+    <p>Loading saved portfolios</p>
+  ) : savedPortfolios.length === 0 ? (
+    <p className="no-saved-portfolios">
+      No saved portfolios yet.
+    </p>
+  ) : (
+    <div className="saved-portfolios-list">
+      {savedPortfolios.map((savedPortfolio) => (
+        <button
+          key={savedPortfolio.id}
+          className="saved-portfolio-card"
+          onClick={() => loadSavedPortfolio(savedPortfolio.id)}
+        >
+          <strong>{savedPortfolio.name}</strong>
+
+          <span>
+            Last updated:{' '}
+            {savedPortfolio.updated_at
+              ? new Date(savedPortfolio.updated_at).toLocaleDateString()
+              : 'Unknown'}
+          </span>
+        </button>
+      ))}
+    </div>
+  )}
+</div>
 
       
           <div className="upload-area">

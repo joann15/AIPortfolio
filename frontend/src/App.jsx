@@ -74,6 +74,10 @@ function App() {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
+  const [savePortfolioName, setSavePortfolioName] = useState('')
+  const [savingPortfolio, setSavingPortfolio] = useState(false)
+  const [savePortfolioError, setSavePortfolioError] = useState('')
+
   // ============================================================
   // NEWS
   // ============================================================
@@ -346,6 +350,70 @@ const loadSavedPortfolio = async (portfolioId) => {
     setPortfolio(data.portfolio_data)
   } catch (error) {
     console.error('Error loading saved portfolio:', error)
+  }
+}
+
+const savePortfolio = async () => {
+  const token = localStorage.getItem('access_token')
+
+  if (!token) {
+    setSavePortfolioError('Please log in again.')
+    return
+  }
+
+  if (!portfolio) {
+    setSavePortfolioError('Please upload a portfolio first.')
+    return
+  }
+
+  if (!savePortfolioName.trim()) {
+    setSavePortfolioError('Please enter a portfolio name.')
+    return
+  }
+
+  setSavingPortfolio(true)
+  setSavePortfolioError('')
+
+  try {
+    const response = await fetch('/portfolios/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: savePortfolioName.trim(),
+        portfolio_data: portfolio,
+      }),
+    })
+
+    let data
+
+    try {
+      data = await response.json()
+    } catch {
+      throw new Error('The server returned an invalid response.')
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || 'Failed to save portfolio.'
+      )
+    }
+
+    setSavePortfolioName('')
+    setSavePortfolioError('')
+
+    await loadSavedPortfolios()
+
+  } catch (error) {
+    console.error('Save portfolio error:', error)
+
+    setSavePortfolioError(
+      error.message || 'Failed to save portfolio.'
+    )
+  } finally {
+    setSavingPortfolio(false)
   }
 }
 
@@ -950,6 +1018,50 @@ const loadSavedPortfolio = async (portfolioId) => {
                 take a moment...
               </p>
             )}
+
+            {portfolio && (
+  <div className="save-portfolio-area">
+
+    <p className="upload-instruction">
+      Save this portfolio for future access.
+    </p>
+
+    <div className="save-portfolio-form">
+
+      <input
+        type="text"
+        value={savePortfolioName}
+        onChange={(event) =>
+          setSavePortfolioName(event.target.value)
+        }
+        placeholder="Portfolio name, e.g. US Stocks"
+        disabled={savingPortfolio}
+      />
+
+      <button
+        type="button"
+        className="save-portfolio-button"
+        onClick={savePortfolio}
+        disabled={
+          savingPortfolio ||
+          !savePortfolioName.trim()
+        }
+      >
+        {savingPortfolio
+          ? 'Saving...'
+          : 'Save Portfolio'}
+      </button>
+
+    </div>
+
+    {savePortfolioError && (
+      <p className="upload-status">
+        {savePortfolioError}
+      </p>
+    )}
+
+  </div>
+)}
 
           </div>
 

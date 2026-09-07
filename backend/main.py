@@ -4,7 +4,7 @@ import json
 import time
 import os
 import subprocess
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -17,7 +17,7 @@ import jwt
 from pwdlib import PasswordHash
 
 from database import Base, engine, get_db
-from models import User, Portfolio
+from models import User, Portfolio, PortfolioHistory
 
 
 # ============================================================
@@ -883,7 +883,10 @@ def get_saved_portfolio(
 
 @app.post("/portfolio/upload")
 async def upload_portfolio(
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    portfolio_id: int | None = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Upload and process a portfolio.
@@ -1007,6 +1010,36 @@ async def upload_portfolio(
         f"{len(holdings)} holdings."
     )
 
+        # --------------------------------------------------------
+    # 5A. FIND SAVED PORTFOLIO
+    # --------------------------------------------------------
+
+    saved_portfolio = None
+
+    if portfolio_id is not None:
+
+        saved_portfolio = (
+            db.query(Portfolio)
+            .filter(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == current_user.id
+            )
+            .first()
+        )
+
+        if saved_portfolio is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Saved portfolio not found."
+            )
+
+        print(
+            f"Updating saved portfolio: "
+            f"{saved_portfolio.name} "
+            f"(ID: {saved_portfolio.id})"
+        )
+
     # --------------------------------------------------------
     # 6. REMOVE OLD DATA
     # --------------------------------------------------------
@@ -1046,6 +1079,39 @@ async def upload_portfolio(
 
     print("\nNew portfolio saved:")
     print(PORTFOLIO_FILE)
+
+        # --------------------------------------------------------
+    # 7A. UPDATE SAVED PORTFOLIO + SAVE HISTORY
+    # --------------------------------------------------------
+
+    if saved_portfolio is not None:
+
+        # Save the previous version before replacing it
+        history_record = PortfolioHistory(
+            portfolio_id=saved_portfolio.id,
+            user_id=current_user.id,
+            portfolio_data=saved_portfolio.portfolio_data
+        )
+
+        db.add(history_record)
+
+        # Update the saved portfolio with the new version
+        saved_portfolio.portfolio_data = json.dumps(
+            portfolio_data,
+            ensure_ascii=False
+        )
+
+        db.commit()
+
+        print(
+            f"Previous version saved to history "
+            f"for portfolio ID {saved_portfolio.id}"
+        )
+
+        print(
+            f"Saved portfolio updated: "
+            f"{saved_portfolio.name}"
+        )
 
     # 8. RUN ANALYZER
     run_portfolio_analysis()

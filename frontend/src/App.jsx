@@ -457,6 +457,13 @@ const savePortfolio = async () => {
 
       const formData = new FormData()
       formData.append('file', file)
+      
+      if (selectedSavedPortfolio?.id) {
+        formData.append(
+          'portfolio_id',
+          String(selectedSavedPortfolio.id)
+        )
+      }
 
       const response = await fetch(
         `${API_URL}/portfolio/upload`,

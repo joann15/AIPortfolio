@@ -66,3 +66,35 @@ class Portfolio(Base):
         server_default=func.now(),
         onupdate=func.now()
     )
+
+
+class PortfolioHistory(Base):
+    __tablename__ = "portfolio_history"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    portfolio_id = Column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    user_id = Column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    portfolio_data = Column(
+        Text,
+        nullable=False
+    )
+
+    recorded_at = Column(
+        DateTime,
+        server_default=func.now()
+    )

@@ -350,6 +350,9 @@ const loadSavedPortfolio = async (portfolioId) => {
     const data = await response.json()
 
     console.log('Saved portfolio loaded:', data)
+    console.log('ANALYSIS DATA:', data.analysis)
+    console.log('EVIDENCE DATA:', data.evidence)
+    console.log('NARRATIVE DATA:', data.narrative)
 
     setSelectedSavedPortfolio(data)
 

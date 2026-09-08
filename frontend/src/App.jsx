@@ -37,6 +37,7 @@ function App() {
   const [savedPortfolios, setSavedPortfolios] = useState([])
   const [savedPortfoliosLoading, setSavedPortfoliosLoading] = useState(false)
   const [selectedSavedPortfolio, setSelectedSavedPortfolio] = useState(null)
+  const [savedPortfolioDropdownOpen, setSavedPortfolioDropdownOpen] = useState(false)
   
   const [authUsername, setAuthUsername] = useState('')
   const [authPassword, setAuthPassword] = useState('')
@@ -1008,36 +1009,82 @@ const savePortfolio = async () => {
     </div>
 
     <div className="saved-portfolios">
+
   <div className="saved-portfolios-header">
     <h2>My Saved Portfolios</h2>
   </div>
 
   {savedPortfoliosLoading ? (
-    <p>Loading saved portfolios</p>
+    <p>Loading saved portfolios...</p>
   ) : savedPortfolios.length === 0 ? (
     <p className="no-saved-portfolios">
       No saved portfolios yet.
     </p>
   ) : (
-    <div className="saved-portfolios-list">
-      {savedPortfolios.map((savedPortfolio) => (
-        <button
-          key={savedPortfolio.id}
-          className="saved-portfolio-card"
-          onClick={() => loadSavedPortfolio(savedPortfolio.id)}
-        >
-          <strong>{savedPortfolio.name}</strong>
+    <div className="portfolio-dropdown">
+
+      <button
+        type="button"
+        className="portfolio-dropdown-button"
+        onClick={() =>
+          setSavedPortfolioDropdownOpen(
+            !savedPortfolioDropdownOpen
+          )
+        }
+      >
+        <div className="portfolio-dropdown-selected">
+          <strong>
+            {portfolio?.portfolio_name ||
+              portfolio?.name ||
+              'Select a portfolio'}
+          </strong>
 
           <span>
-            Last updated:{' '}
-            {savedPortfolio.updated_at
-              ? new Date(savedPortfolio.updated_at).toLocaleDateString()
-              : 'Unknown'}
+            {portfolio
+              ? 'Currently selected'
+              : 'Choose a saved portfolio'}
           </span>
-        </button>
-      ))}
+        </div>
+
+        <span className="portfolio-dropdown-arrow">
+          {savedPortfolioDropdownOpen ? '▲' : '▼'}
+        </span>
+      </button>
+
+      {savedPortfolioDropdownOpen && (
+        <div className="portfolio-dropdown-menu">
+
+          {savedPortfolios.map((savedPortfolio) => (
+            <button
+              type="button"
+              key={savedPortfolio.id}
+              className="portfolio-dropdown-option"
+              onClick={() => {
+                loadSavedPortfolio(savedPortfolio.id)
+                setSavedPortfolioDropdownOpen(false)
+              }}
+            >
+              <strong>
+                {savedPortfolio.name}
+              </strong>
+
+              <span>
+                Last updated:{' '}
+                {savedPortfolio.updated_at
+                  ? new Date(
+                      savedPortfolio.updated_at
+                    ).toLocaleDateString()
+                  : 'Unknown'}
+              </span>
+            </button>
+          ))}
+
+        </div>
+      )}
+
     </div>
   )}
+
 </div>
 
       

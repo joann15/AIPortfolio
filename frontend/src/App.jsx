@@ -334,11 +334,14 @@ const loadSavedPortfolio = async (portfolioId) => {
   }
 
   try {
-    const response = await fetch(`/portfolios/${portfolioId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    const response = await fetch(
+      `/portfolios/${portfolioId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
 
     if (!response.ok) {
       throw new Error('Failed to load saved portfolio.')
@@ -346,10 +349,42 @@ const loadSavedPortfolio = async (portfolioId) => {
 
     const data = await response.json()
 
+    console.log('Saved portfolio loaded:', data)
+
     setSelectedSavedPortfolio(data)
+
+    // Load portfolio data
     setPortfolio(data.portfolio_data)
+
+    // Load analysis data
+    if (data.analysis) {
+      setAnalysis(data.analysis)
+    }
+
+    // Load evidence data
+    if (data.evidence) {
+      setEvidence(data.evidence)
+    }
+
+    // Load AI narrative
+    if (data.narrative) {
+      setNarrative(data.narrative)
+    }
+
+    // Clear previous errors
+    setError('')
+    setUploadError('')
+
   } catch (error) {
-    console.error('Error loading saved portfolio:', error)
+    console.error(
+      'Error loading saved portfolio:',
+      error
+    )
+
+    setError(
+      error.message ||
+      'Could not load saved portfolio.'
+    )
   }
 }
 

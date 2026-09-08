@@ -846,7 +846,6 @@ def save_portfolio(
         }
     }
 
-
 @app.get("/portfolios/{portfolio_id}")
 def get_saved_portfolio(
     portfolio_id: int,
@@ -868,192 +867,21 @@ def get_saved_portfolio(
             detail="Portfolio not found."
         )
 
-    return {
-        "id": portfolio.id,
-        "name": portfolio.name,
-        "portfolio_data": json.loads(portfolio.portfolio_data),
-        "created_at": portfolio.created_at,
-        "updated_at": portfolio.updated_at
-    }
-
-
-# ============================================================
-# PORTFOLIO UPLOAD
-# ============================================================
-
-@app.post("/portfolio/upload")
-async def upload_portfolio(
-    file: UploadFile = File(...),
-    portfolio_id: int | None = Form(None),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Upload and process a portfolio.
-
-    Workflow:
-
-        1. Receive JSON file
-        2. Validate filename
-        3. Read file
-        4. Parse JSON
-        5. Validate portfolio structure
-        6. Remove old portfolio/results
-        7. Save new portfolio
-        8. Run analyzer
-        9. Load generated results
-        10. Return everything to React
-    """
-
-    print("\n" + "=" * 60)
-    print("NEW PORTFOLIO UPLOAD")
-    print("=" * 60)
+    # Load the saved portfolio JSON
+    portfolio_data = json.loads(
+        portfolio.portfolio_data
+    )
 
     # --------------------------------------------------------
-    # 1. CHECK FILE
-    # --------------------------------------------------------
-
-    if not file.filename:
-
-        raise HTTPException(
-            status_code=400,
-            detail="No file was provided."
-        )
-
-    print("Uploaded filename:")
-    print(file.filename)
-
-    # --------------------------------------------------------
-    # 2. CHECK EXTENSION
-    # --------------------------------------------------------
-
-    if not file.filename.lower().endswith(".json"):
-
-        raise HTTPException(
-            status_code=400,
-            detail="Please upload a JSON file."
-        )
-
-    # --------------------------------------------------------
-    # 3. READ FILE
+    # TEMPORARILY use this saved portfolio for analysis
     # --------------------------------------------------------
 
     try:
+        # Remove analysis results from the previously
+        # selected/uploaded portfolio
+        delete_old_results()
 
-        contents = await file.read()
-
-    except Exception as error:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Could not read uploaded file: "
-                f"{error}"
-            )
-        )
-
-    if not contents:
-
-        raise HTTPException(
-            status_code=400,
-            detail="The uploaded file is empty."
-        )
-
-    print(
-        f"Uploaded file size: {len(contents)} bytes"
-    )
-
-    # --------------------------------------------------------
-    # 4. PARSE JSON
-    # --------------------------------------------------------
-
-    try:
-
-        portfolio_data = json.loads(
-            contents.decode("utf-8")
-        )
-
-    except UnicodeDecodeError:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "The uploaded file is not valid "
-                "UTF-8 JSON."
-            )
-        )
-
-    except json.JSONDecodeError as error:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "The uploaded file contains invalid "
-                f"JSON: {error}"
-            )
-        )
-
-    # --------------------------------------------------------
-    # 5. VALIDATE
-    # --------------------------------------------------------
-
-    portfolio_data = validate_portfolio_data(
-        portfolio_data
-    )
-
-    holdings = (
-        portfolio_data["portfolio"]["holdings"]
-    )
-
-    print(
-        f"Validated portfolio with "
-        f"{len(holdings)} holdings."
-    )
-
-        # --------------------------------------------------------
-    # 5A. FIND SAVED PORTFOLIO
-    # --------------------------------------------------------
-
-    saved_portfolio = None
-
-    if portfolio_id is not None:
-
-        saved_portfolio = (
-            db.query(Portfolio)
-            .filter(
-                Portfolio.id == portfolio_id,
-                Portfolio.user_id == current_user.id
-            )
-            .first()
-        )
-
-        if saved_portfolio is None:
-
-            raise HTTPException(
-                status_code=404,
-                detail="Saved portfolio not found."
-            )
-
-        print(
-            f"Updating saved portfolio: "
-            f"{saved_portfolio.name} "
-            f"(ID: {saved_portfolio.id})"
-        )
-
-    # --------------------------------------------------------
-    # 6. REMOVE OLD DATA
-    # --------------------------------------------------------
-
-    print("\nRemoving previous portfolio data...")
-
-    delete_old_results()
-
-    # --------------------------------------------------------
-    # 7. SAVE NEW PORTFOLIO
-    # --------------------------------------------------------
-
-    try:
-
+        # Write the saved portfolio into portfolio.json
         with open(
             PORTFOLIO_FILE,
             "w",
@@ -1064,116 +892,50 @@ async def upload_portfolio(
                 portfolio_data,
                 file_handle,
                 indent=4,
-                ensure_ascii=False,
+                ensure_ascii=False
             )
 
-    except Exception as error:
+        # Run analyzer for this saved portfolio
+        run_portfolio_analysis()
 
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"Could not save portfolio.json: "
-                f"{error}"
-            )
-        )
-
-    print("\nNew portfolio saved:")
-    print(PORTFOLIO_FILE)
-
-        # --------------------------------------------------------
-    # 7A. UPDATE SAVED PORTFOLIO + SAVE HISTORY
-    # --------------------------------------------------------
-
-    if saved_portfolio is not None:
-
-        # Save the previous version before replacing it
-        history_record = PortfolioHistory(
-            portfolio_id=saved_portfolio.id,
-            user_id=current_user.id,
-            portfolio_data=saved_portfolio.portfolio_data
-        )
-
-        db.add(history_record)
-
-        # Update the saved portfolio with the new version
-        saved_portfolio.portfolio_data = json.dumps(
-            portfolio_data,
-            ensure_ascii=False
-        )
-
-        db.commit()
-
-        print(
-            f"Previous version saved to history "
-            f"for portfolio ID {saved_portfolio.id}"
-        )
-
-        print(
-            f"Saved portfolio updated: "
-            f"{saved_portfolio.name}"
-        )
-
-    # 8. RUN ANALYZER
-    run_portfolio_analysis()
-
-    # 9. LOAD GENERATED RESULTS + GENERATE NARRATIVE
-    
-    try:
+        # Load newly generated results
         analysis = load_json_file(
             ANALYSIS_OUTPUT
         )
+
         evidence = load_json_file(
             EVIDENCE_OUTPUT
         )
+
         narrative = generate_narrative(
             evidence
         )
+
     except HTTPException:
         raise
 
     except Exception as error:
-        print("Narrative generation error:")
+        print("Saved portfolio analysis error:")
         print(error)
 
         raise HTTPException(
             status_code=500,
             detail=(
-                "Portfolio analysis completed, but "
-                f"AI narrative generation failed: {error}"
+                "Portfolio was loaded, but its analysis "
+                f"could not be generated: {error}"
             )
         )
-    
-    # --------------------------------------------------------
-    # 10. RETURN PROCESSED DATA
-    # --------------------------------------------------------
-
-    print("\n" + "=" * 60)
-    print("PORTFOLIO PROCESSING COMPLETE")
-    print("=" * 60)
 
     return {
-        "message":
-            "Portfolio uploaded and analyzed successfully.",
-
-        "filename":
-            file.filename,
-
-        "holdings":
-            len(holdings),
-
-        "portfolio":
-            portfolio_data,
-
-        "analysis":
-            analysis,
-
-        "evidence":
-            evidence,
-
-        "narrative":
-            narrative,
+        "id": portfolio.id,
+        "name": portfolio.name,
+        "portfolio_data": portfolio_data,
+        "analysis": analysis,
+        "evidence": evidence,
+        "narrative": narrative,
+        "created_at": portfolio.created_at,
+        "updated_at": portfolio.updated_at
     }
-
 
 # ============================================================
 # CHAT

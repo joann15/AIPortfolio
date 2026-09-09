@@ -983,7 +983,7 @@ const savePortfolio = async () => {
       ====================================================== */}
 
       <header className="header">
-  <div className="header-content">
+        <div className="header-content">
 
     <div className="header-top">
       <div>
@@ -997,14 +997,14 @@ const savePortfolio = async () => {
       <div className="user-section">
         <span>
           Welcome, {username}
-        </span>
-
-        <button
+          </span>
+          
+          <button
           onClick={handleLogout}
           className="logout-button"
-        >
-          Logout
-        </button>
+          >
+            Logout
+            </button>
       </div>
     </div>
 
@@ -1033,6 +1033,7 @@ const savePortfolio = async () => {
         }
       >
         <div className="portfolio-dropdown-selected">
+
           <strong>
             {portfolio?.portfolio_name ||
               portfolio?.name ||
@@ -1044,6 +1045,7 @@ const savePortfolio = async () => {
               ? 'Currently selected'
               : 'Choose a saved portfolio'}
           </span>
+
         </div>
 
         <span className="portfolio-dropdown-arrow">
@@ -1060,8 +1062,8 @@ const savePortfolio = async () => {
               key={savedPortfolio.id}
               className="portfolio-dropdown-option"
               onClick={() => {
-                loadSavedPortfolio(savedPortfolio.id)
-                setSavedPortfolioDropdownOpen(false)
+                loadSavedPortfolio(savedPortfolio.id);
+                setSavedPortfolioDropdownOpen(false);
               }}
             >
               <strong>
@@ -1083,92 +1085,14 @@ const savePortfolio = async () => {
       )}
 
     </div>
+    
   )}
-
 </div>
 
+</div>
+</header>
       
-          <div className="upload-area">
-
-            <p className="upload-instruction">
-              Upload your portfolio JSON to begin your
-              analysis.
-            </p>
-
-            <label
-              className={`upload-button ${
-                uploading ? 'disabled' : ''
-              }`}
-            >
-              {uploading
-                ? 'Analyzing...'
-                : 'Upload Portfolio JSON'}
-
-              <input
-                type="file"
-                accept=".json,application/json"
-                onChange={uploadPortfolio}
-                disabled={uploading}
-                hidden
-              />
-            </label>
-
-            {uploading && (
-              <p className="upload-status">
-                Your portfolio is being analyzed. This may
-                take a moment...
-              </p>
-            )}
-
-            {portfolio && (
-  <div className="save-portfolio-area">
-
-    <p className="upload-instruction">
-      Save this portfolio for future access.
-    </p>
-
-    <div className="save-portfolio-form">
-
-      <input
-        type="text"
-        value={savePortfolioName}
-        onChange={(event) =>
-          setSavePortfolioName(event.target.value)
-        }
-        placeholder="Portfolio name, e.g. US Stocks"
-        disabled={savingPortfolio}
-      />
-
-      <button
-        type="button"
-        className="save-portfolio-button"
-        onClick={savePortfolio}
-        disabled={
-          savingPortfolio ||
-          !savePortfolioName.trim()
-        }
-      >
-        {savingPortfolio
-          ? 'Saving...'
-          : 'Save Portfolio'}
-      </button>
-
-    </div>
-
-    {savePortfolioError && (
-      <p className="upload-status">
-        {savePortfolioError}
-      </p>
-    )}
-
-  </div>
-)}
-
-          </div>
-
-        </div>
-      </header>
-
+        
       {/* ======================================================
           ERRORS
       ====================================================== */}

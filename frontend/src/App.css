@@ -1164,19 +1164,6 @@ button {
   white-space: normal;
 }
 
-.auth-card h1 {
-  margin: 0 0 8px;
-  text-align: center;
-
-  color: #111827;
-  font-size: 32px;
-  line-height: 1.2;
-  font-weight: 800;
-  letter-spacing: -0.8px;
-
-  white-space: normal;
-}
-
 .auth-card form {
   display: flex;
   flex-direction: column;
@@ -1229,7 +1216,17 @@ button {
   color: #374151;
   font-size: 14px;
 }
+.auth-subtitle {
+  margin: 10px 0 28px;
 
+  text-align: center;
+
+  color: #6b7280;
+
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
 /* ============================================================
    LOGGED-IN HEADER
    ============================================================ */

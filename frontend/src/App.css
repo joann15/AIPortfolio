@@ -81,13 +81,14 @@ button {
 
   margin-top: 28px;
   margin-bottom: 26px;
-
-  padding: 28px 32px;
-
+  padding: 30px 32px 32px;
   border-radius: 22px;
-
   background:
-    radial-gradient(circle at 85% 20%, rgba(99, 102, 241, 0.25), transparent 35%),
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(99, 102, 241, 0.25),
+      transparent 35%
+    ),
     linear-gradient(135deg, #111827, #1e293b);
 
   color: white;
@@ -1292,28 +1293,21 @@ button {
 .portfolio-dropdown {
   position: relative;
   width: 100%;
-  max-width: 720px;
+  max-width: 520px;
 }
 
 .portfolio-dropdown-button {
   width: 100%;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 10px 14px;
-
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
-
   background: rgba(255, 255, 255, 0.10);
   color: white;
-
   text-align: left;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     border-color 0.15s ease;
@@ -1349,46 +1343,32 @@ button {
 
 .portfolio-dropdown-menu {
   position: absolute;
-
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-
   z-index: 100;
-
   max-height: 260px;
   overflow-y: auto;
-
   padding: 5px;
-
   background: #1e293b;
-
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9px;
-
   box-shadow:
     0 12px 30px rgba(0, 0, 0, 0.25);
 }
 
 .portfolio-dropdown-option {
   width: 100%;
-
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-
   gap: 3px;
-
   padding: 10px 12px;
-
   border: none;
   border-radius: 6px;
-
   background: transparent;
   color: white;
-
   text-align: left;
-
   cursor: pointer;
 }
 
@@ -1420,7 +1400,10 @@ button {
   align-items: center;
   gap: 10px;
 
-  margin-top: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .portfolio-save-text {

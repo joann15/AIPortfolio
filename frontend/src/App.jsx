@@ -1035,16 +1035,14 @@ const savePortfolio = async () => {
         <div className="portfolio-dropdown-selected">
 
           <strong>
-            {portfolio?.portfolio_name ||
-              portfolio?.name ||
-              'Select a portfolio'}
-          </strong>
-
-          <span>
-            {portfolio
+            {selectedSavedPortfolio?.name || 'Select a portfolio'}
+            </strong>
+            
+            <span>
+              {selectedSavedPortfolio
               ? 'Currently selected'
               : 'Choose a saved portfolio'}
-          </span>
+            </span>
 
         </div>
 
@@ -1088,6 +1086,65 @@ const savePortfolio = async () => {
     
   )}
 </div>
+
+{/* UPLOAD PORTFOLIO */}
+  <div className="upload-area">
+    <p className="upload-instruction">
+      Upload a portfolio JSON file to begin your analysis.
+    </p>
+
+    <label
+      className={`upload-button ${
+        uploading ? 'disabled' : ''
+      }`}
+    >
+      {uploading ? 'Analyzing...' : 'Upload Portfolio JSON'}
+
+      <input
+        type="file"
+        accept=".json,application/json"
+        onChange={uploadPortfolio}
+        disabled={uploading}
+        hidden
+      />
+    </label>
+
+    {uploading && (
+      <p className="upload-status">
+        Your portfolio is being analyzed. This may take a moment.
+      </p>
+    )}
+  </div>
+
+  {/* SAVE PORTFOLIO */}
+  {portfolio && (
+    <div className="portfolio-save">
+      <span className="portfolio-save-text">
+        Save this portfolio:
+      </span>
+
+      <input
+        type="text"
+        value={savePortfolioName}
+        onChange={(event) =>
+          setSavePortfolioName(event.target.value)
+        }
+        placeholder="Portfolio name"
+        disabled={savingPortfolio}
+      />
+
+      <button
+        type="button"
+        onClick={savePortfolio}
+        disabled={
+          savingPortfolio ||
+          !savePortfolioName.trim()
+        }
+      >
+        {savingPortfolio ? 'Saving...' : 'Save Portfolio'}
+      </button>
+    </div>
+  )}
 
 </div>
 </header>

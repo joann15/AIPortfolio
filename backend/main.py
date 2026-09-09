@@ -17,7 +17,13 @@ import jwt
 from pwdlib import PasswordHash
 
 from database import Base, engine, get_db
-from models import User, Portfolio, PortfolioHistory
+from models import (
+    User,
+    Portfolio,
+    PortfolioHistory,
+    PortfolioSnapshot,
+    HoldingSnapshot,
+)
 
 
 # ============================================================
@@ -167,7 +173,222 @@ def load_json_file(path: Path):
             status_code=500,
             detail=f"Could not read {path.name}: {error}"
         )
+def compare_portfolios(previous_portfolio, current_portfolio):
+    """
+    Compare two portfolio snapshots and calculate
+    the change in total portfolio value and each holding.
+    """
 
+    previous_data = previous_portfolio["portfolio"]
+    current_data = current_portfolio["portfolio"]
+
+    # --------------------------------------------------------
+    # PORTFOLIO-LEVEL COMPARISON
+    # --------------------------------------------------------
+
+    previous_value = previous_data["summary"]["total_current_value"]
+    current_value = current_data["summary"]["total_current_value"]
+
+    total_change = current_value - previous_value
+
+    if previous_value != 0:
+        total_change_percent = (
+            total_change / previous_value
+        ) * 100
+    else:
+        total_change_percent = 0
+
+    # --------------------------------------------------------
+    # CREATE HOLDING LOOKUPS
+    # --------------------------------------------------------
+
+    previous_holdings = {
+        holding["ticker"]: holding
+        for holding in previous_data.get("holdings", [])
+    }
+
+    current_holdings = {
+        holding["ticker"]: holding
+        for holding in current_data.get("holdings", [])
+    }
+
+    # --------------------------------------------------------
+    # COMPARE HOLDINGS
+    # --------------------------------------------------------
+
+    holding_changes = []
+
+    all_tickers = set(previous_holdings) | set(current_holdings)
+
+    for ticker in all_tickers:
+
+        previous_holding = previous_holdings.get(ticker)
+        current_holding = current_holdings.get(ticker)
+
+        # ----------------------------------------------------
+        # HOLDING EXISTS IN BOTH SNAPSHOTS
+        # ----------------------------------------------------
+
+        if previous_holding and current_holding:
+
+            previous_holding_value = previous_holding.get(
+                "current_value", 0
+            )
+
+            current_holding_value = current_holding.get(
+                "current_value", 0
+            )
+
+            change = (
+                current_holding_value
+                - previous_holding_value
+            )
+
+            if previous_holding_value != 0:
+                change_percent = (
+                    change / previous_holding_value
+                ) * 100
+            else:
+                change_percent = None
+
+            holding_changes.append({
+                "ticker": ticker,
+                "company_name": current_holding.get(
+                    "company_name"
+                ),
+                "previous_value": round(
+                    previous_holding_value, 2
+                ),
+                "current_value": round(
+                    current_holding_value, 2
+                ),
+                "change": round(
+                    change, 2
+                ),
+                "change_percent": (
+                    round(change_percent, 2)
+                    if change_percent is not None
+                    else None
+                ),
+                "status": "existing"
+            })
+
+        # ----------------------------------------------------
+        # NEW HOLDING
+        # ----------------------------------------------------
+
+        elif current_holding:
+
+            current_holding_value = current_holding.get(
+                "current_value", 0
+            )
+
+            holding_changes.append({
+                "ticker": ticker,
+                "company_name": current_holding.get(
+                    "company_name"
+                ),
+                "previous_value": 0,
+                "current_value": round(
+                    current_holding_value, 2
+                ),
+                "change": round(
+                    current_holding_value, 2
+                ),
+                "change_percent": None,
+                "status": "added"
+            })
+
+        # ----------------------------------------------------
+        # REMOVED HOLDING
+        # ----------------------------------------------------
+
+        elif previous_holding:
+
+            previous_holding_value = previous_holding.get(
+                "current_value", 0
+            )
+
+            holding_changes.append({
+                "ticker": ticker,
+                "company_name": previous_holding.get(
+                    "company_name"
+                ),
+                "previous_value": round(
+                    previous_holding_value, 2
+                ),
+                "current_value": 0,
+                "change": round(
+                    -previous_holding_value, 2
+                ),
+                "change_percent": -100,
+                "status": "removed"
+            })
+
+    # --------------------------------------------------------
+    # SORT BIGGEST MOVERS
+    # --------------------------------------------------------
+
+    holding_changes.sort(
+        key=lambda holding: abs(
+            holding["change"]
+        ),
+        reverse=True
+    )
+
+    # --------------------------------------------------------
+    # POSITIVE / NEGATIVE CONTRIBUTORS
+    # --------------------------------------------------------
+
+    positive_contributors = [
+        holding
+        for holding in holding_changes
+        if holding["change"] > 0
+    ]
+
+    negative_contributors = [
+        holding
+        for holding in holding_changes
+        if holding["change"] < 0
+    ]
+
+    # --------------------------------------------------------
+    # RETURN COMPARISON RESULT
+    # --------------------------------------------------------
+
+    return {
+        "previous_date": previous_data.get(
+            "last_updated"
+        ),
+
+        "current_date": current_data.get(
+            "last_updated"
+        ),
+
+        "previous_portfolio_value": round(
+            previous_value, 2
+        ),
+
+        "current_portfolio_value": round(
+            current_value, 2
+        ),
+
+        "total_change": round(
+            total_change, 2
+        ),
+
+        "total_change_percent": round(
+            total_change_percent, 2
+        ),
+
+        "holdings": holding_changes,
+
+        "positive_contributors":
+            positive_contributors,
+
+        "negative_contributors":
+            negative_contributors
+    }
 
 def delete_old_results():
     """
@@ -212,13 +433,6 @@ def delete_old_results():
                 time.sleep(0.3)
 
         if last_error is not None:
-            # Don't hard-fail the whole upload over a stale file that
-            # couldn't be removed -- log it and continue. The analyzer
-            # will overwrite this file in "w" mode anyway if it
-            # succeeds; the only downside of skipping this is that a
-            # *failed* analyzer run could leave a stale file behind,
-            # which is a much smaller problem than blocking every
-            # upload on a transient OneDrive lock.
             print(
                 f"WARNING: Could not remove old file {path.name} "
                 f"(still locked after retries): {last_error}"
@@ -872,13 +1086,7 @@ def get_saved_portfolio(
         portfolio.portfolio_data
     )
 
-    # --------------------------------------------------------
-    # TEMPORARILY use this saved portfolio for analysis
-    # --------------------------------------------------------
-
     try:
-        # Remove analysis results from the previously
-        # selected/uploaded portfolio
         delete_old_results()
 
         # Write the saved portfolio into portfolio.json
@@ -935,6 +1143,188 @@ def get_saved_portfolio(
         "narrative": narrative,
         "created_at": portfolio.created_at,
         "updated_at": portfolio.updated_at
+    }
+
+# ============================================================
+# PORTFOLIO UPLOAD
+# ============================================================
+
+@app.post("/portfolio/upload")
+async def upload_portfolio(
+    file: UploadFile = File(...),
+    portfolio_id: int | None = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a portfolio JSON file.
+
+    If portfolio_id is provided:
+    - Save the previous portfolio version to portfolio_history.
+    - Update the saved portfolio with the new data.
+
+    If portfolio_id is not provided:
+    - Analyze the uploaded portfolio only.
+    """
+
+    # --------------------------------------------------------
+    # CHECK FILE TYPE
+    # --------------------------------------------------------
+
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="No file was selected."
+        )
+
+    if not file.filename.lower().endswith(".json"):
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a JSON portfolio file."
+        )
+
+    # --------------------------------------------------------
+    # READ FILE
+    # --------------------------------------------------------
+
+    try:
+        contents = await file.read()
+
+        portfolio_data = json.loads(
+            contents.decode("utf-8")
+        )
+
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file contains invalid JSON."
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not read uploaded file: {error}"
+        )
+
+    # --------------------------------------------------------
+    # VALIDATE PORTFOLIO
+    # --------------------------------------------------------
+
+    validate_portfolio_data(
+        portfolio_data
+    )
+
+    # --------------------------------------------------------
+    # FIND SAVED PORTFOLIO IF PROVIDED
+    # --------------------------------------------------------
+
+    saved_portfolio = None
+
+    if portfolio_id is not None:
+
+        saved_portfolio = (
+            db.query(Portfolio)
+            .filter(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == current_user.id
+            )
+            .first()
+        )
+
+        if saved_portfolio is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Saved portfolio not found."
+            )
+
+    # --------------------------------------------------------
+    # SAVE PREVIOUS VERSION TO HISTORY
+    # --------------------------------------------------------
+
+    if saved_portfolio is not None:
+
+        history_record = PortfolioHistory(
+            portfolio_id=saved_portfolio.id,
+            user_id=current_user.id,
+            portfolio_data=saved_portfolio.portfolio_data
+        )
+
+        db.add(history_record)
+
+        # Update saved portfolio
+        saved_portfolio.portfolio_data = json.dumps(
+            portfolio_data,
+            ensure_ascii=False
+        )
+
+        db.commit()
+        db.refresh(saved_portfolio)
+
+    # --------------------------------------------------------
+    # WRITE CURRENT PORTFOLIO FILE
+    # --------------------------------------------------------
+
+    try:
+
+        delete_old_results()
+
+        with open(
+            PORTFOLIO_FILE,
+            "w",
+            encoding="utf-8"
+        ) as file_handle:
+
+            json.dump(
+                portfolio_data,
+                file_handle,
+                indent=4,
+                ensure_ascii=False
+            )
+
+        # ----------------------------------------------------
+        # RUN ANALYSIS
+        # ----------------------------------------------------
+
+        run_portfolio_analysis()
+
+        analysis = load_json_file(
+            ANALYSIS_OUTPUT
+        )
+
+        evidence = load_json_file(
+            EVIDENCE_OUTPUT
+        )
+
+        narrative = generate_narrative(
+            evidence
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        print("Portfolio upload error:")
+        print(error)
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Portfolio was uploaded, but analysis "
+                f"could not be generated: {error}"
+            )
+        )
+
+    # --------------------------------------------------------
+    # RETURN RESULTS
+    # --------------------------------------------------------
+
+    return {
+        "message": "Portfolio uploaded successfully.",
+        "portfolio": portfolio_data,
+        "analysis": analysis,
+        "evidence": evidence,
+        "narrative": narrative
     }
 
 # ============================================================

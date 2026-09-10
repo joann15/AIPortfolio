@@ -1,4 +1,12 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Text,
+    Float,
+    UniqueConstraint,
+)
 from sqlalchemy.sql import func
 
 from database import Base
@@ -99,9 +107,16 @@ class PortfolioHistory(Base):
         server_default=func.now()
     )
 
-
 class PortfolioSnapshot(Base):
     __tablename__ = "portfolio_snapshots"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "portfolio_id",
+            "snapshot_date",
+            name="uq_portfolio_snapshot_date"
+        ),
+    )
 
     id = Column(
         Integer,
@@ -157,7 +172,6 @@ class PortfolioSnapshot(Base):
         DateTime,
         server_default=func.now()
     )
-
 
 class HoldingSnapshot(Base):
     __tablename__ = "holding_snapshots"

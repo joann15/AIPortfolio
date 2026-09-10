@@ -15,7 +15,7 @@ from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from pwdlib import PasswordHash
-
+from datetime import datetime
 from database import Base, engine, get_db
 from models import (
     User,
@@ -1144,7 +1144,135 @@ def get_saved_portfolio(
         "created_at": portfolio.created_at,
         "updated_at": portfolio.updated_at
     }
+# ============================================================
+# CREATE PORTFOLIO SNAPSHOT
+# ============================================================
 
+def create_portfolio_snapshot(
+    db: Session,
+    saved_portfolio: Portfolio,
+    portfolio_data: dict,
+    current_user: User
+):
+    portfolio = portfolio_data["portfolio"]
+    summary = portfolio["summary"]
+
+    # --------------------------------------------------------
+    # GET SNAPSHOT DATE
+    # --------------------------------------------------------
+
+    last_updated = portfolio.get("last_updated")
+
+    if not last_updated:
+        raise HTTPException(
+            status_code=400,
+            detail="Portfolio JSON must contain 'last_updated'."
+        )
+
+    try:
+        snapshot_date = datetime.fromisoformat(
+            last_updated.replace("Z", "+00:00")
+        ).replace(tzinfo=None)
+
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid portfolio 'last_updated' date."
+        )
+
+    # --------------------------------------------------------
+    # CHECK IF SNAPSHOT ALREADY EXISTS
+    # --------------------------------------------------------
+
+    existing_snapshot = (
+        db.query(PortfolioSnapshot)
+        .filter(
+            PortfolioSnapshot.portfolio_id == saved_portfolio.id,
+            PortfolioSnapshot.snapshot_date == snapshot_date
+        )
+        .first()
+    )
+
+    if existing_snapshot:
+        return existing_snapshot
+
+    # --------------------------------------------------------
+    # CREATE PORTFOLIO SNAPSHOT
+    # --------------------------------------------------------
+
+    snapshot = PortfolioSnapshot(
+        portfolio_id=saved_portfolio.id,
+        user_id=current_user.id,
+        snapshot_date=snapshot_date,
+
+        total_originally_invested=(
+            summary.get("total_originally_invested")
+        ),
+
+        total_current_value=(
+            summary.get("total_current_value")
+        ),
+
+        total_return_amount=(
+            summary.get("total_return_amount")
+        ),
+
+        total_return_pct=(
+            summary.get("total_return_percentage")
+        ),
+
+        source="upload"
+    )
+
+    db.add(snapshot)
+
+    # Get the generated snapshot ID
+    db.flush()
+
+    # --------------------------------------------------------
+    # SAVE EACH HOLDING
+    # --------------------------------------------------------
+
+    for holding in portfolio.get("holdings", []):
+
+        holding_snapshot = HoldingSnapshot(
+            snapshot_id=snapshot.id,
+
+            ticker=holding.get("ticker"),
+
+            company_name=holding.get(
+                "company_name"
+            ),
+
+            shares_owned=holding.get(
+                "shares_owned"
+            ),
+
+            average_purchase_price=holding.get(
+                "average_purchase_price"
+            ),
+
+            current_market_price=holding.get(
+                "current_market_price"
+            ),
+
+            current_value=holding.get(
+                "current_value"
+            ),
+
+            current_return_amount=holding.get(
+                "current_return_amount"
+            ),
+
+            current_return_pct=holding.get(
+                "current_return_percentage",
+                holding.get("current_return_pct")
+            )
+        )
+
+        db.add(holding_snapshot)
+
+    return snapshot
 # ============================================================
 # PORTFOLIO UPLOAD
 # ============================================================
@@ -1242,20 +1370,36 @@ async def upload_portfolio(
     # --------------------------------------------------------
 
     if saved_portfolio is not None:
-
         history_record = PortfolioHistory(
             portfolio_id=saved_portfolio.id,
             user_id=current_user.id,
             portfolio_data=saved_portfolio.portfolio_data
-        )
-
+            )
         db.add(history_record)
 
-        # Update saved portfolio
+    # --------------------------------------------------------
+    # UPDATE SAVED PORTFOLIO
+    # --------------------------------------------------------
+
         saved_portfolio.portfolio_data = json.dumps(
             portfolio_data,
             ensure_ascii=False
         )
+
+    # --------------------------------------------------------
+    # CREATE PERFORMANCE SNAPSHOT
+    # --------------------------------------------------------
+
+        create_portfolio_snapshot(
+            db=db,
+            saved_portfolio=saved_portfolio,
+            portfolio_data=portfolio_data,
+            current_user=current_user
+        )
+
+    # --------------------------------------------------------
+    # SAVE EVERYTHING
+    # --------------------------------------------------------
 
         db.commit()
         db.refresh(saved_portfolio)

@@ -1026,6 +1026,72 @@ def get_saved_portfolios(
     }
 
 
+# ============================================================
+# DELETE SAVED PORTFOLIO
+# ============================================================
+
+@app.delete("/portfolios/{portfolio_id}")
+def delete_saved_portfolio(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    portfolio = (
+        db.query(Portfolio)
+        .filter(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if portfolio is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Portfolio not found."
+        )
+
+    # Delete related history
+    db.query(PortfolioHistory).filter(
+        PortfolioHistory.portfolio_id == portfolio_id
+    ).delete(
+        synchronize_session=False
+    )
+
+    # Find portfolio snapshots
+    snapshots = (
+        db.query(PortfolioSnapshot)
+        .filter(
+            PortfolioSnapshot.portfolio_id == portfolio_id
+        )
+        .all()
+    )
+
+    # Delete holding snapshots for those snapshots
+    for snapshot in snapshots:
+        db.query(HoldingSnapshot).filter(
+            HoldingSnapshot.snapshot_id == snapshot.id
+        ).delete(
+            synchronize_session=False
+        )
+
+    # Delete portfolio snapshots
+    db.query(PortfolioSnapshot).filter(
+        PortfolioSnapshot.portfolio_id == portfolio_id
+    ).delete(
+        synchronize_session=False
+    )
+
+    # Delete the saved portfolio
+    db.delete(portfolio)
+
+    db.commit()
+
+    return {
+        "message": "Portfolio deleted successfully.",
+        "portfolio_id": portfolio_id
+    }
+
 @app.post("/portfolios/save")
 def save_portfolio(
     request: SavePortfolioRequest,

@@ -467,7 +467,61 @@ const savePortfolio = async () => {
   }, [isAuthenticated])
 
 
+//Delete Portfolio
 
+const handleDeletePortfolio = async (portfolioId) => {
+  const confirmed = window.confirm(
+    'Are you sure you want to delete this saved portfolio?'
+  )
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    const token = localStorage.getItem('access_token')
+
+    if (!token) {
+      alert('Please log in again.')
+      return
+    }
+
+    const response = await fetch(
+      `${API_URL}/portfolios/${portfolioId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || 'Failed to delete portfolio.'
+      )
+    }
+
+    // Remove the deleted portfolio from the list
+    setSavedPortfolios((currentPortfolios) =>
+      currentPortfolios.filter(
+        (portfolio) => portfolio.id !== portfolioId
+      )
+    )
+
+    // If the deleted portfolio was selected,
+    // clear the current selection
+    if (selectedSavedPortfolio?.id === portfolioId) {
+      setSelectedSavedPortfolio(null)
+    }
+
+  } catch (error) {
+    console.error('Delete portfolio error:', error)
+    alert(error.message)
+  }
+}
   // ============================================================
   // UPLOAD PORTFOLIO JSON
   // ============================================================
@@ -1055,30 +1109,45 @@ const savePortfolio = async () => {
         <div className="portfolio-dropdown-menu">
 
           {savedPortfolios.map((savedPortfolio) => (
-            <button
-              type="button"
-              key={savedPortfolio.id}
-              className="portfolio-dropdown-option"
-              onClick={() => {
-                loadSavedPortfolio(savedPortfolio.id);
-                setSavedPortfolioDropdownOpen(false);
-              }}
-            >
-              <strong>
-                {savedPortfolio.name}
-              </strong>
+  <div
+    key={savedPortfolio.id}
+    className="portfolio-dropdown-option"
+  >
+    <button
+      type="button"
+      className="portfolio-dropdown-select"
+      onClick={() => {
+        loadSavedPortfolio(savedPortfolio.id);
+        setSavedPortfolioDropdownOpen(false);
+      }}
+    >
+      <strong>
+        {savedPortfolio.name}
+      </strong>
 
-              <span>
-                Last updated:{' '}
-                {savedPortfolio.updated_at
-                  ? new Date(
-                      savedPortfolio.updated_at
-                    ).toLocaleDateString()
-                  : 'Unknown'}
-              </span>
-            </button>
-          ))}
+      <span>
+        Last updated:{' '}
+        {savedPortfolio.updated_at
+          ? new Date(
+              savedPortfolio.updated_at
+            ).toLocaleDateString()
+          : 'Unknown'}
+      </span>
+    </button>
 
+    <button
+      type="button"
+      className="portfolio-delete-button"
+      onClick={(event) => {
+        event.stopPropagation();
+        handleDeletePortfolio(savedPortfolio.id);
+      }}
+      title="Delete portfolio"
+    >
+      ×
+    </button>
+  </div>
+))}
         </div>
       )}
 

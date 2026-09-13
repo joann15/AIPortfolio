@@ -527,169 +527,74 @@ const handleDeletePortfolio = async (portfolioId) => {
   // ============================================================
 
   async function uploadPortfolio(event) {
-    const file = event.target.files?.[0]
+  const file = event.target.files?.[0];
 
-    if (!file) {
-      return
+  if (!file) return;
+
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    setUploadError("Please log in again.");
+    return;
+  }
+
+  setUploading(true);
+  setUploadError("");
+  setError("");
+  setAnswer("");
+
+  try {
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      throw new Error("Please select a valid portfolio JSON file.");
     }
 
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      setUploadError('Please log in again.')
-      return
-    }
+    const formData = new FormData();
+    formData.append("file", file);
 
-    setUploading(true)
-    setUploadError('')
-    setError('')
-    setAnswer('')
+    
 
-    try {
-      // Check the file type before uploading
-      if (
-        !file.name.toLowerCase().endsWith('.json')
-      ) {
-        throw new Error(
-          'Please select a valid portfolio JSON file.'
-        )
-      }
-
-      const formData = new FormData();
-      formData.append("file", selectedFile);
+    if (selectedSavedPortfolio?.id) {
       formData.append(
         "portfolio_id",
-        String(selectedPortfolioId)
+        String(selectedSavedPortfolio.id)
       );
-      
-      const response = await fetch(
-        `${API_BASE_URL}/portfolio/upload`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          body: formData
-        }
-      );
-
-      let data
-
-      try {
-        data = await response.json()
-      } catch {
-        throw new Error(
-          'The server returned an invalid response.'
-        )
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data.detail || 'Portfolio upload failed.'
-        )
-      }
-
-      console.log('Portfolio uploaded successfully:', data)
-
-      if (data.portfolio) {
-        setPortfolio(data.portfolio)
-      }
-
-      if (data.analysis) {
-        setAnalysis(data.analysis)
-      }
-
-      if (data.evidence) {
-        setEvidence(data.evidence)
-      }
-
-      if (data.narrative) {
-        setNarrative(data.narrative)
-      }
-
-      // Clear any previous errors
-      setUploadError('')
-      setError('')
-    } catch (err) {
-      console.error('Upload error:', err)
-
-      setUploadError(
-        err.message || 'Could not upload portfolio.'
-      )
-    } finally {
-      setUploading(false)
-
-      // Allows the user to upload the same filename again
-      event.target.value = ''
     }
+
+    const response = await fetch(
+      `${API_URL}/portfolio/upload`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Portfolio upload failed.");
+    }
+
+    setPortfolio(data.portfolio);
+    setAnalysis(data.analysis);
+    setEvidence(data.evidence);
+    setNarrative(data.narrative);
+
+    await loadSavedPortfolios();
+
+    if (selectedSavedPortfolio?.id) {
+      await loadSavedPortfolio(selectedSavedPortfolio.id);
+    }
+  } catch (err) {
+    console.error("Upload error:", err);
+    setUploadError(err.message || "Could not upload portfolio.");
+  } finally {
+    setUploading(false);
+    event.target.value = "";
   }
-
-  // ============================================================
-  // CHAT
-  // ============================================================
-
-  async function askQuestion(text = question) {
-    const userQuestion = text.trim()
-
-    if (!userQuestion || loading) {
-      return
-    }
-
-    // Don't allow chat before a portfolio exists
-    if (!portfolio) {
-      setAnswer(
-        'Please upload a portfolio JSON file before asking questions.'
-      )
-      return
-    }
-
-    setQuestion(userQuestion)
-    setLoading(true)
-    setAnswer('')
-
-    try {
-      const response = await fetch(
-        `${API_URL}/chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            question: userQuestion,
-          }),
-        }
-      )
-
-      let data
-
-      try {
-        data = await response.json()
-      } catch {
-        throw new Error(
-          'The server returned an invalid response.'
-        )
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data.detail || 'Chat request failed.'
-        )
-      }
-
-      setAnswer(
-        data.answer || 'No answer was returned.'
-      )
-    } catch (err) {
-      console.error('Chat error:', err)
-
-      setAnswer(
-        err.message ||
-          'Sorry, I could not connect to the AI assistant. Please make sure the backend is running.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
+}
 
   // ============================================================
   // FORMATTING

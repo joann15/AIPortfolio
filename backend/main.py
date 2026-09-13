@@ -1091,7 +1091,6 @@ def delete_saved_portfolio(
         "message": "Portfolio deleted successfully.",
         "portfolio_id": portfolio_id
     }
-
 @app.post("/portfolios/save")
 def save_portfolio(
     request: SavePortfolioRequest,
@@ -1109,10 +1108,24 @@ def save_portfolio(
     portfolio = Portfolio(
         user_id=current_user.id,
         name=name,
-        portfolio_data=json.dumps(request.portfolio_data)
+        portfolio_data=json.dumps(
+            request.portfolio_data,
+            ensure_ascii=False
+        )
     )
 
     db.add(portfolio)
+
+    # Generate the portfolio ID before creating its snapshot
+    db.flush()
+
+    create_portfolio_snapshot(
+        db=db,
+        saved_portfolio=portfolio,
+        portfolio_data=request.portfolio_data,
+        current_user=current_user
+    )
+
     db.commit()
     db.refresh(portfolio)
 
@@ -1339,10 +1352,8 @@ def create_portfolio_snapshot(
         db.add(holding_snapshot)
 
     return snapshot
-# ============================================================
-# PORTFOLIO UPLOAD
-# ============================================================
 
+    #Portfolio upload endpoint
 @app.post("/portfolio/upload")
 async def upload_portfolio(
     file: UploadFile = File(...),
@@ -1351,15 +1362,25 @@ async def upload_portfolio(
     db: Session = Depends(get_db)
 ):
     """
-    Upload a portfolio JSON file.
+    Upload a portfolio JSON file into an existing saved portfolio.
 
-    If portfolio_id is provided:
-    - Save the previous portfolio version to portfolio_history.
-    - Update the saved portfolio with the new data.
-
-    If portfolio_id is not provided:
-    - Analyze the uploaded portfolio only.
+    The portfolio_id identifies the portfolio heading.
+    Multiple uploaded files can belong to the same portfolio_id.
+    Each file creates a separate performance snapshot.
     """
+
+    # --------------------------------------------------------
+    # CHECK THAT A SAVED PORTFOLIO WAS SELECTED
+    # --------------------------------------------------------
+
+    if portfolio_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Please create or select a saved portfolio "
+                "before uploading a file."
+            )
+        )
 
     # --------------------------------------------------------
     # CHECK FILE TYPE
@@ -1375,6 +1396,25 @@ async def upload_portfolio(
         raise HTTPException(
             status_code=400,
             detail="Please upload a JSON portfolio file."
+        )
+
+    # --------------------------------------------------------
+    # FIND SAVED PORTFOLIO
+    # --------------------------------------------------------
+
+    saved_portfolio = (
+        db.query(Portfolio)
+        .filter(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if saved_portfolio is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Saved portfolio not found."
         )
 
     # --------------------------------------------------------
@@ -1404,78 +1444,52 @@ async def upload_portfolio(
     # VALIDATE PORTFOLIO
     # --------------------------------------------------------
 
-    validate_portfolio_data(
-        portfolio_data
-    )
-
-    # --------------------------------------------------------
-    # FIND SAVED PORTFOLIO IF PROVIDED
-    # --------------------------------------------------------
-
-    saved_portfolio = None
-
-    if portfolio_id is not None:
-
-        saved_portfolio = (
-            db.query(Portfolio)
-            .filter(
-                Portfolio.id == portfolio_id,
-                Portfolio.user_id == current_user.id
-            )
-            .first()
-        )
-
-        if saved_portfolio is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Saved portfolio not found."
-            )
+    validate_portfolio_data(portfolio_data)
 
     # --------------------------------------------------------
     # SAVE PREVIOUS VERSION TO HISTORY
     # --------------------------------------------------------
 
-    if saved_portfolio is not None:
-        history_record = PortfolioHistory(
-            portfolio_id=saved_portfolio.id,
-            user_id=current_user.id,
-            portfolio_data=saved_portfolio.portfolio_data
-            )
-        db.add(history_record)
+    history_record = PortfolioHistory(
+        portfolio_id=saved_portfolio.id,
+        user_id=current_user.id,
+        portfolio_data=saved_portfolio.portfolio_data
+    )
+
+    db.add(history_record)
 
     # --------------------------------------------------------
-    # UPDATE SAVED PORTFOLIO
+    # UPDATE THE SAME SAVED PORTFOLIO
     # --------------------------------------------------------
 
-        saved_portfolio.portfolio_data = json.dumps(
-            portfolio_data,
-            ensure_ascii=False
-        )
+    saved_portfolio.portfolio_data = json.dumps(
+        portfolio_data,
+        ensure_ascii=False
+    )
 
     # --------------------------------------------------------
-    # CREATE PERFORMANCE SNAPSHOT
+    # CREATE SNAPSHOT UNDER THE SAME PORTFOLIO ID
     # --------------------------------------------------------
 
-        create_portfolio_snapshot(
-            db=db,
-            saved_portfolio=saved_portfolio,
-            portfolio_data=portfolio_data,
-            current_user=current_user
-        )
+    create_portfolio_snapshot(
+        db=db,
+        saved_portfolio=saved_portfolio,
+        portfolio_data=portfolio_data,
+        current_user=current_user
+    )
 
     # --------------------------------------------------------
-    # SAVE EVERYTHING
+    # SAVE DATABASE CHANGES
     # --------------------------------------------------------
 
-        db.commit()
-        db.refresh(saved_portfolio)
+    db.commit()
+    db.refresh(saved_portfolio)
 
     # --------------------------------------------------------
     # WRITE CURRENT PORTFOLIO FILE
     # --------------------------------------------------------
 
     try:
-
         delete_old_results()
 
         with open(
@@ -1513,7 +1527,6 @@ async def upload_portfolio(
         raise
 
     except Exception as error:
-
         print("Portfolio upload error:")
         print(error)
 
@@ -1531,6 +1544,7 @@ async def upload_portfolio(
 
     return {
         "message": "Portfolio uploaded successfully.",
+        "portfolio_id": saved_portfolio.id,
         "portfolio": portfolio_data,
         "analysis": analysis,
         "evidence": evidence,

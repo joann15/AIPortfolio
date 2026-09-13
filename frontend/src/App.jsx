@@ -554,26 +554,23 @@ const handleDeletePortfolio = async (portfolioId) => {
         )
       }
 
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append(
+        "portfolio_id",
+        String(selectedPortfolioId)
+      );
       
-      if (selectedSavedPortfolio?.id) {
-        formData.append(
-          'portfolio_id',
-          String(selectedSavedPortfolio.id)
-        )
-      }
-
       const response = await fetch(
-        `${API_URL}/portfolio/upload`,
+        `${API_BASE_URL}/portfolio/upload`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`
           },
-          body: formData,
+          body: formData
         }
-      )
+      );
 
       let data
 

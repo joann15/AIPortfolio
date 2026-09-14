@@ -97,6 +97,11 @@ class PortfolioHistory(Base):
         index=True
     )
 
+    filename = Column(
+        String(255),
+        nullable=False
+    )
+
     portfolio_data = Column(
         Text,
         nullable=False

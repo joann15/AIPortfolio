@@ -1223,6 +1223,50 @@ def get_saved_portfolio(
         "created_at": portfolio.created_at,
         "updated_at": portfolio.updated_at
     }
+
+@app.get("/portfolios/{portfolio_id}/files")
+def get_portfolio_files(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    saved_portfolio = (
+        db.query(Portfolio)
+        .filter(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if saved_portfolio is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Saved portfolio not found."
+        )
+
+    files = (
+        db.query(PortfolioHistory)
+        .filter(
+            PortfolioHistory.portfolio_id == portfolio_id,
+            PortfolioHistory.user_id == current_user.id
+        )
+        .order_by(PortfolioHistory.recorded_at.desc())
+        .all()
+    )
+
+    return {
+        "portfolio_id": portfolio_id,
+        "portfolio_name": saved_portfolio.name,
+        "files": [
+            {
+                "id": item.id,
+                "filename": item.filename,
+                "uploaded_at": item.recorded_at,
+            }
+            for item in files
+        ]
+    }
 # ============================================================
 # CREATE PORTFOLIO SNAPSHOT
 # ============================================================
@@ -1453,9 +1497,12 @@ async def upload_portfolio(
     history_record = PortfolioHistory(
         portfolio_id=saved_portfolio.id,
         user_id=current_user.id,
-        portfolio_data=saved_portfolio.portfolio_data
+        filename=file.filename,
+        portfolio_data=json.dumps(
+            portfolio_data,
+            ensure_ascii=False
+        )
     )
-
     db.add(history_record)
 
     # --------------------------------------------------------

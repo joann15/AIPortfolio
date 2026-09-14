@@ -1399,6 +1399,407 @@ def create_portfolio_snapshot(
 
     return snapshot
 
+def compare_snapshot_records(
+    previous_snapshot,
+    current_snapshot,
+    previous_holdings,
+    current_holdings
+):
+    """
+    Compare two stored portfolio snapshots.
+
+    The current snapshot is compared against the
+    previous available snapshot, regardless of the
+    calendar date.
+    """
+
+    # --------------------------------------------------------
+    # PORTFOLIO-LEVEL COMPARISON
+    # --------------------------------------------------------
+
+    previous_value = (
+        previous_snapshot.total_current_value or 0
+    )
+
+    current_value = (
+        current_snapshot.total_current_value or 0
+    )
+
+    total_change = current_value - previous_value
+
+    if previous_value != 0:
+        total_change_percent = (
+            total_change / previous_value
+        ) * 100
+    else:
+        total_change_percent = 0
+
+    # --------------------------------------------------------
+    # CREATE HOLDING LOOKUPS
+    # --------------------------------------------------------
+
+    previous_by_ticker = {
+        holding.ticker: holding
+        for holding in previous_holdings
+    }
+
+    current_by_ticker = {
+        holding.ticker: holding
+        for holding in current_holdings
+    }
+
+    # --------------------------------------------------------
+    # COMPARE ALL HOLDINGS
+    # --------------------------------------------------------
+
+    holding_changes = []
+
+    all_tickers = (
+        set(previous_by_ticker.keys())
+        |
+        set(current_by_ticker.keys())
+    )
+
+    for ticker in all_tickers:
+
+        previous_holding = previous_by_ticker.get(ticker)
+        current_holding = current_by_ticker.get(ticker)
+
+        # ----------------------------------------------------
+        # HOLDING EXISTS IN BOTH SNAPSHOTS
+        # ----------------------------------------------------
+
+        if previous_holding and current_holding:
+
+            previous_holding_value = (
+                previous_holding.current_value or 0
+            )
+
+            current_holding_value = (
+                current_holding.current_value or 0
+            )
+
+            change = (
+                current_holding_value
+                - previous_holding_value
+            )
+
+            if previous_holding_value != 0:
+                change_percent = (
+                    change / previous_holding_value
+                ) * 100
+            else:
+                change_percent = None
+
+            status = "existing"
+
+        # ----------------------------------------------------
+        # NEW HOLDING
+        # ----------------------------------------------------
+
+        elif current_holding:
+
+            previous_holding_value = 0
+
+            current_holding_value = (
+                current_holding.current_value or 0
+            )
+
+            change = current_holding_value
+
+            change_percent = None
+
+            status = "added"
+
+        # ----------------------------------------------------
+        # REMOVED HOLDING
+        # ----------------------------------------------------
+
+        else:
+
+            previous_holding_value = (
+                previous_holding.current_value or 0
+            )
+
+            current_holding_value = 0
+
+            change = -previous_holding_value
+
+            change_percent = -100
+
+            status = "removed"
+
+        # ----------------------------------------------------
+        # COMPANY NAME
+        # ----------------------------------------------------
+
+        if current_holding:
+            company_name = current_holding.company_name
+        else:
+            company_name = previous_holding.company_name
+
+        holding_changes.append({
+            "ticker": ticker,
+            "company_name": company_name,
+            "previous_value": round(
+                previous_holding_value,
+                2
+            ),
+            "current_value": round(
+                current_holding_value,
+                2
+            ),
+            "change": round(
+                change,
+                2
+            ),
+            "change_percent": (
+                round(change_percent, 2)
+                if change_percent is not None
+                else None
+            ),
+            "status": status
+        })
+
+    # --------------------------------------------------------
+    # SORT BY LARGEST CHANGE
+    # --------------------------------------------------------
+
+    holding_changes.sort(
+        key=lambda holding: abs(
+            holding["change"]
+        ),
+        reverse=True
+    )
+
+    # --------------------------------------------------------
+    # POSITIVE CONTRIBUTORS
+    # --------------------------------------------------------
+
+    positive_contributors = [
+        holding
+        for holding in holding_changes
+        if holding["change"] > 0
+    ]
+
+    # --------------------------------------------------------
+    # NEGATIVE CONTRIBUTORS
+    # --------------------------------------------------------
+
+    negative_contributors = [
+        holding
+        for holding in holding_changes
+        if holding["change"] < 0
+    ]
+
+    # --------------------------------------------------------
+    # RETURN RESULT
+    # --------------------------------------------------------
+
+    return {
+        "previous_date": (
+            previous_snapshot.snapshot_date
+        ),
+
+        "current_date": (
+            current_snapshot.snapshot_date
+        ),
+
+        "previous_portfolio_value": round(
+            previous_value,
+            2
+        ),
+
+        "current_portfolio_value": round(
+            current_value,
+            2
+        ),
+
+        "total_change": round(
+            total_change,
+            2
+        ),
+
+        "total_change_percent": round(
+            total_change_percent,
+            2
+        ),
+
+        "holdings": holding_changes,
+
+        "positive_contributors":
+            positive_contributors,
+
+        "negative_contributors":
+            negative_contributors
+    }
+
+@app.get("/portfolios/{portfolio_id}/performance")
+def get_portfolio_performance(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Compare the latest portfolio snapshot against
+    the previous available snapshot.
+
+    For the current implementation, the period is
+    always the previous available snapshot.
+    """
+
+    # --------------------------------------------------------
+    # CHECK PORTFOLIO OWNERSHIP
+    # --------------------------------------------------------
+
+    portfolio = (
+        db.query(Portfolio)
+        .filter(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if portfolio is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Portfolio not found."
+        )
+
+    # --------------------------------------------------------
+    # GET LATEST SNAPSHOT
+    # --------------------------------------------------------
+
+    current_snapshot = (
+        db.query(PortfolioSnapshot)
+        .filter(
+            PortfolioSnapshot.portfolio_id == portfolio_id,
+            PortfolioSnapshot.user_id == current_user.id
+        )
+        .order_by(
+            PortfolioSnapshot.snapshot_date.desc()
+        )
+        .first()
+    )
+
+    if current_snapshot is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No portfolio snapshots are available."
+        )
+
+    # --------------------------------------------------------
+    # GET PREVIOUS AVAILABLE SNAPSHOT
+    # --------------------------------------------------------
+
+    previous_snapshot = (
+        db.query(PortfolioSnapshot)
+        .filter(
+            PortfolioSnapshot.portfolio_id == portfolio_id,
+            PortfolioSnapshot.user_id == current_user.id,
+            PortfolioSnapshot.snapshot_date
+            < current_snapshot.snapshot_date
+        )
+        .order_by(
+            PortfolioSnapshot.snapshot_date.desc()
+        )
+        .first()
+    )
+
+    # --------------------------------------------------------
+    # CHECK IF COMPARISON IS POSSIBLE
+    # --------------------------------------------------------
+
+    if previous_snapshot is None:
+        return {
+            "portfolio_id": portfolio_id,
+            "period": "previous",
+            "message": (
+                "There is not enough historical data "
+                "to compare this portfolio yet."
+            ),
+            "current_snapshot": {
+                "date": current_snapshot.snapshot_date,
+                "value": current_snapshot.total_current_value
+            },
+            "previous_snapshot": None,
+            "portfolio_change": None,
+            "holdings": [],
+            "positive_contributors": [],
+            "negative_contributors": []
+        }
+
+    # --------------------------------------------------------
+    # GET HOLDINGS FOR CURRENT SNAPSHOT
+    # --------------------------------------------------------
+
+    current_holdings = (
+        db.query(HoldingSnapshot)
+        .filter(
+            HoldingSnapshot.snapshot_id
+            == current_snapshot.id
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------
+    # GET HOLDINGS FOR PREVIOUS SNAPSHOT
+    # --------------------------------------------------------
+
+    previous_holdings = (
+        db.query(HoldingSnapshot)
+        .filter(
+            HoldingSnapshot.snapshot_id
+            == previous_snapshot.id
+        )
+        .all()
+    )
+
+    # --------------------------------------------------------
+    # COMPARE SNAPSHOTS
+    # --------------------------------------------------------
+
+    comparison = compare_snapshot_records(
+        previous_snapshot=previous_snapshot,
+        current_snapshot=current_snapshot,
+        previous_holdings=previous_holdings,
+        current_holdings=current_holdings
+    )
+
+    # --------------------------------------------------------
+    # RETURN RESULT
+    # --------------------------------------------------------
+
+    return {
+        "portfolio_id": portfolio_id,
+
+        "period": "day",
+
+        "current_snapshot": {
+            "date": current_snapshot.snapshot_date,
+            "value": current_snapshot.total_current_value
+        },
+
+        "previous_snapshot": {
+            "date": previous_snapshot.snapshot_date,
+            "value": previous_snapshot.total_current_value
+        },
+
+        "portfolio_change": {
+            "amount": comparison["total_change"],
+            "percentage": comparison["total_change_percent"]
+        },
+
+        "holdings": comparison["holdings"],
+
+        "positive_contributors":
+            comparison["positive_contributors"],
+
+        "negative_contributors":
+            comparison["negative_contributors"]
+    }
+
     #Portfolio upload endpoint
 @app.post("/portfolio/upload")
 async def upload_portfolio(

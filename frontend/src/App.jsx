@@ -53,6 +53,8 @@ function App() {
   const [analysis, setAnalysis] = useState(null)
   const [evidence, setEvidence] = useState(null)
   const [narrative, setNarrative] = useState(null)
+  const [performance, setPerformance] = useState(null)
+  const [performanceLoading, setPerformanceLoading] = useState(false)
 
   // ============================================================
   // CHAT
@@ -233,6 +235,7 @@ function App() {
       setAnalysis(null)
       setEvidence(null)
       setNarrative(null)
+      setPerformance(null)
       setAnswer('')
       setQuestion('')
     }
@@ -371,6 +374,43 @@ function App() {
   }
 }
 
+const loadPortfolioPerformance = async (portfolioId) => {
+    const token = localStorage.getItem("access_token")
+
+    if (!token || !portfolioId) {
+        return
+    }
+
+    setPerformanceLoading(true)
+
+    try {
+        const response = await fetch(
+            `/portfolios/${portfolioId}/performance`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || "Failed to load portfolio performance."
+            )
+        }
+
+        setPerformance(data)
+
+    } catch (error) {
+        console.error("Performance error:", error)
+        setPerformance(null)
+
+    } finally {
+        setPerformanceLoading(false)
+    }
+}
 
 const loadSavedPortfolio = async (portfolioId) => {
   const token = localStorage.getItem('access_token')
@@ -411,6 +451,7 @@ const loadSavedPortfolio = async (portfolioId) => {
     )
 
     await loadPortfolioFiles(data.id)
+    await loadPortfolioPerformance(data.id)
 
     // Load portfolio data
     setPortfolio(data.portfolio_data)
@@ -638,15 +679,15 @@ const handleDeletePortfolio = async (portfolioId) => {
       throw new Error(data.detail || "Portfolio upload failed.");
     }
 
-    setPortfolio(data.portfolio);
-    setAnalysis(data.analysis);
-    setEvidence(data.evidence);
-    setNarrative(data.narrative);
-
-    await loadSavedPortfolios();
-
+    setPortfolio(data.portfolio)
+    setAnalysis(data.analysis)
+    setEvidence(data.evidence)
+    setNarrative(data.narrative)
+    
+    await loadSavedPortfolios()
+    
     if (selectedSavedPortfolio?.id) {
-      await loadSavedPortfolio(selectedSavedPortfolio.id);
+      await loadSavedPortfolio(selectedSavedPortfolio.id)
     }
   } catch (err) {
     console.error("Upload error:", err);
@@ -1545,258 +1586,120 @@ const handleDeletePortfolio = async (portfolioId) => {
 
           </section>
 
-          {/* ==================================================
-              DAILY PERFORMANCE
-          ================================================== */}
+{/* ==================================================
+    PERFORMANCE COMPARISON
+================================================== */}
 
-          <section className="card">
+<section className="card">
 
-            <div className="section-heading">
+  <div className="section-heading">
 
-              <h2>Daily Performance</h2>
+    <h2>Performance Comparison</h2>
 
-              <p>
-                Values from the portfolio analysis
-              </p>
+    <p>
+      Compared with the previous available portfolio snapshot
+    </p>
 
-            </div>
+  </div>
 
-            <div className="daily-movement">
+  {performanceLoading ? (
 
-              <div>
-                <span>Previous Value</span>
+    <div className="empty-state">
+      Loading performance comparison...
+    </div>
 
-                <strong>
-                  {formatMoney(
-                    previousPortfolioValue
-                  )}
-                </strong>
-              </div>
+  ) : !performance ? (
 
-              <div>
-                <span>Current Value</span>
+    <div className="empty-state">
+      No performance data available.
+    </div>
 
-                <strong>
-                  {formatMoney(
-                    currentPortfolioValue
-                  )}
-                </strong>
-              </div>
+  ) : !performance.previous_snapshot ? (
 
-              <div>
-                <span>Daily Impact</span>
+    <div className="empty-state">
+      {performance.message ||
+        "There is not enough historical data to compare this portfolio yet."}
+    </div>
 
-                <strong
-                  className={
-                    Number(totalDailyImpact) >= 0
-                      ? 'positive'
-                      : 'negative'
-                  }
-                >
-                  {formatSignedMoney(
-                    totalDailyImpact
-                  )}
-                </strong>
-              </div>
+  ) : (
 
-              <div>
-                <span>Daily Change</span>
+    <>
 
-                <strong
-                  className={
-                    Number(dailyChangePercent) >= 0
-                      ? 'positive'
-                      : 'negative'
-                  }
-                >
-                  {formatPercent(
-                    dailyChangePercent
-                  )}
-                </strong>
-              </div>
+      <div className="daily-movement">
 
-            </div>
+        <div>
+          <span>Previous Value</span>
 
-          </section>
+          <strong>
+            {formatMoney(
+              performance.previous_snapshot.value
+            )}
+          </strong>
+        </div>
 
-          {/* ==================================================
-              SECTOR ANALYSIS
-          ================================================== */}
+        <div>
+          <span>Current Value</span>
 
-          <div className="sector-analysis-grid">
+          <strong>
+            {formatMoney(
+              performance.current_snapshot.value
+            )}
+          </strong>
+        </div>
 
-            {/* SECTOR PERFORMANCE */}
+        <div>
+          <span>Change</span>
 
-            <section className="card">
+          <strong
+            className={
+              Number(
+                performance.portfolio_change.amount
+              ) >= 0
+                ? 'positive'
+                : 'negative'
+            }
+          >
+            {formatSignedMoney(
+              performance.portfolio_change.amount
+            )}
+          </strong>
+        </div>
 
-              <div className="section-heading">
+        <div>
+          <span>Change %</span>
 
-                <h2>Sector Performance</h2>
+          <strong
+            className={
+              Number(
+                performance.portfolio_change.percentage
+              ) >= 0
+                ? 'positive'
+                : 'negative'
+            }
+          >
+            {formatPercent(
+              performance.portfolio_change.percentage
+            )}
+          </strong>
+        </div>
 
-                <p>
-                  Sector values and daily performance from
-                  the portfolio analysis
-                </p>
+      </div>
 
-              </div>
+      <div className="comparison-date">
 
-              {sectors.length === 0 ? (
+        Compared with{" "}
 
-                <div className="empty-state">
-                  No sector data available.
-                </div>
+        {new Date(
+          performance.previous_snapshot.date
+        ).toLocaleDateString()}
 
-              ) : (
+      </div>
 
-                <div className="sector-list">
+    </>
 
-                  {sectors.map((sector) => (
+  )}
 
-                    <div
-                      className="sector-row"
-                      key={sector.name}
-                    >
-
-                      <div className="sector-info">
-
-                        <strong>
-                          {sector.name}
-                        </strong>
-
-                        <p>
-                          {sector.holdings.length}{' '}
-                          holdings
-                          {' • '}
-                          Current Value:{' '}
-                          {formatMoney(
-                            sector.currentValue
-                          )}
-                        </p>
-
-                      </div>
-
-                      <div
-                        className={
-                          Number(
-                            sector.returnPercent
-                          ) >= 0
-                            ? 'positive sector-value'
-                            : 'negative sector-value'
-                        }
-                      >
-                        {formatPercent(
-                          sector.returnPercent
-                        )}
-                      </div>
-
-                      <div
-                        className={
-                          Number(sector.impact) >= 0
-                            ? 'positive sector-value'
-                            : 'negative sector-value'
-                        }
-                      >
-                        {formatSignedMoney(
-                          sector.impact
-                        )}
-                      </div>
-
-                    </div>
-
-                  ))}
-
-                </div>
-              )}
-
-            </section>
-
-            {/* PORTFOLIO DISTRIBUTION */}
-
-            <section className="card">
-
-              <div className="section-heading">
-
-                <h2>
-                  Portfolio Distribution by Sector
-                </h2>
-
-                <p>
-                  Current portfolio value allocated
-                  across sectors
-                </p>
-
-              </div>
-
-              {sectorChartData.length === 0 ? (
-
-                <div className="empty-state">
-                  No sector allocation data available.
-                </div>
-
-              ) : (
-
-                <div className="sector-chart">
-
-                  <ResponsiveContainer
-                    width="100%"
-                    height={360}
-                  >
-
-                    <PieChart>
-
-                      <Pie
-                        data={sectorChartData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        innerRadius={60}
-                        paddingAngle={2}
-                        label={({
-                          name,
-                          percent,
-                        }) =>
-                          `${name} ${(
-                            percent * 100
-                          ).toFixed(0)}%`
-                        }
-                      >
-
-                        {sectorChartData.map(
-                          (entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={
-                                SECTOR_COLORS[
-                                  index %
-                                    SECTOR_COLORS.length
-                                ]
-                              }
-                            />
-                          )
-                        )}
-
-                      </Pie>
-
-                      <Tooltip
-                        formatter={(value) =>
-                          formatMoney(value)
-                        }
-                      />
-
-                      <Legend />
-
-                    </PieChart>
-
-                  </ResponsiveContainer>
-
-                </div>
-              )}
-
-            </section>
-
-          </div>
+</section>
 
           {/* ==================================================
               TOP CONTRIBUTORS

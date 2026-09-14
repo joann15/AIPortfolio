@@ -38,6 +38,7 @@ function App() {
   const [savedPortfoliosLoading, setSavedPortfoliosLoading] = useState(false)
   const [selectedSavedPortfolio, setSelectedSavedPortfolio] = useState(null)
   const [savedPortfolioDropdownOpen, setSavedPortfolioDropdownOpen] = useState(false)
+  const [portfolioFiles, setPortfolioFiles] = useState([])
   
   const [authUsername, setAuthUsername] = useState('')
   const [authPassword, setAuthPassword] = useState('')
@@ -295,6 +296,50 @@ function App() {
     }
   }
 
+  const loadPortfolioFiles = async (portfolioId) => {
+  const token = localStorage.getItem('access_token')
+
+  if (!token || !portfolioId) {
+    setPortfolioFiles([])
+    return
+  }
+
+  try {
+    const response = await fetch(
+      `/portfolios/${portfolioId}/files`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || 'Failed to load portfolio files.'
+      )
+    }
+
+    console.log(
+      'FILES FOR PORTFOLIO:',
+      portfolioId,
+      data.files
+    )
+
+    setPortfolioFiles(data.files || [])
+
+  } catch (error) {
+    console.error(
+      'Error loading portfolio files:',
+      error
+    )
+
+    setPortfolioFiles([])
+  }
+}
+
   const loadSavedPortfolios = async () => {
   const token = localStorage.getItem('access_token')
 
@@ -356,9 +401,16 @@ const loadSavedPortfolio = async (portfolioId) => {
     console.log('NARRATIVE DATA:', data.narrative)
 
     setSelectedSavedPortfolio({
-      id: data.portfolio_id,
+      id: data.id,
       name: data.name,
     })
+
+    console.log(
+      "SELECTED PORTFOLIO ID:",
+      data.id
+    )
+
+    await loadPortfolioFiles(data.id)
 
     // Load portfolio data
     setPortfolio(data.portfolio_data)
@@ -1065,10 +1117,77 @@ const handleDeletePortfolio = async (portfolioId) => {
     </div>
     
   )}
+
 </div>
 
+{/* PORTFOLIO FILES */}
+{selectedSavedPortfolio && (
+  <div className="portfolio-files">
+
+    <div className="portfolio-files-header">
+      <div>
+        <h3>
+          Files in {selectedSavedPortfolio.name}
+        </h3>
+
+        <p>
+          Previous portfolio files uploaded to this portfolio.
+        </p>
+      </div>
+
+      <span className="portfolio-file-count">
+        {portfolioFiles.length}{' '}
+        {portfolioFiles.length === 1 ? 'file' : 'files'}
+      </span>
+    </div>
+
+    {portfolioFiles.length === 0 ? (
+
+      <div className="portfolio-files-empty">
+        No files uploaded yet.
+      </div>
+
+    ) : (
+
+      <div className="portfolio-file-list">
+
+        {portfolioFiles.map((file) => (
+
+          <div
+            className="portfolio-file-item"
+            key={file.id}
+          >
+
+            <div className="portfolio-file-info">
+
+              <strong>
+                {file.filename}
+              </strong>
+
+              <span>
+                Uploaded{' '}
+                {file.uploaded_at
+                  ? new Date(
+                      file.uploaded_at
+                    ).toLocaleString()
+                  : 'Unknown'}
+              </span>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    )}
+
+  </div>
+)}
+
 {/* UPLOAD PORTFOLIO */}
-  <div className="upload-area">
+<div className="upload-area">
     <p className="upload-instruction">
       Upload a portfolio JSON file to begin your analysis.
     </p>

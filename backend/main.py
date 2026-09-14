@@ -1139,6 +1139,51 @@ def save_portfolio(
         }
     }
 
+
+@app.get("/portfolios/{portfolio_id}/files")
+def get_portfolio_files(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    saved_portfolio = (
+        db.query(Portfolio)
+        .filter(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if saved_portfolio is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Saved portfolio not found."
+        )
+
+    files = (
+        db.query(PortfolioHistory)
+        .filter(
+            PortfolioHistory.portfolio_id == portfolio_id,
+            PortfolioHistory.user_id == current_user.id
+        )
+        .order_by(PortfolioHistory.recorded_at.desc())
+        .all()
+    )
+
+    return {
+        "portfolio_id": portfolio_id,
+        "portfolio_name": saved_portfolio.name,
+        "files": [
+            {
+                "id": item.id,
+                "filename": item.filename,
+                "uploaded_at": item.recorded_at,
+            }
+            for item in files
+        ]
+    }
+
 @app.get("/portfolios/{portfolio_id}")
 def get_saved_portfolio(
     portfolio_id: int,
@@ -1224,49 +1269,6 @@ def get_saved_portfolio(
         "updated_at": portfolio.updated_at
     }
 
-@app.get("/portfolios/{portfolio_id}/files")
-def get_portfolio_files(
-    portfolio_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    saved_portfolio = (
-        db.query(Portfolio)
-        .filter(
-            Portfolio.id == portfolio_id,
-            Portfolio.user_id == current_user.id
-        )
-        .first()
-    )
-
-    if saved_portfolio is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Saved portfolio not found."
-        )
-
-    files = (
-        db.query(PortfolioHistory)
-        .filter(
-            PortfolioHistory.portfolio_id == portfolio_id,
-            PortfolioHistory.user_id == current_user.id
-        )
-        .order_by(PortfolioHistory.recorded_at.desc())
-        .all()
-    )
-
-    return {
-        "portfolio_id": portfolio_id,
-        "portfolio_name": saved_portfolio.name,
-        "files": [
-            {
-                "id": item.id,
-                "filename": item.filename,
-                "uploaded_at": item.recorded_at,
-            }
-            for item in files
-        ]
-    }
 # ============================================================
 # CREATE PORTFOLIO SNAPSHOT
 # ============================================================

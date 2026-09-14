@@ -1478,12 +1478,6 @@ async def upload_portfolio(
         current_user=current_user
     )
 
-    # --------------------------------------------------------
-    # SAVE DATABASE CHANGES
-    # --------------------------------------------------------
-
-    db.commit()
-    db.refresh(saved_portfolio)
 
     # --------------------------------------------------------
     # WRITE CURRENT PORTFOLIO FILE
@@ -1537,6 +1531,10 @@ async def upload_portfolio(
                 f"could not be generated: {error}"
             )
         )
+
+
+    db.commit()
+    db.refresh(saved_portfolio)
 
     # --------------------------------------------------------
     # RETURN RESULTS

@@ -355,7 +355,10 @@ const loadSavedPortfolio = async (portfolioId) => {
     console.log('EVIDENCE DATA:', data.evidence)
     console.log('NARRATIVE DATA:', data.narrative)
 
-    setSelectedSavedPortfolio(data)
+    setSelectedSavedPortfolio({
+      id: data.portfolio_id,
+      name: data.name,
+    })
 
     // Load portfolio data
     setPortfolio(data.portfolio_data)
@@ -442,8 +445,11 @@ const savePortfolio = async () => {
 
     setSavePortfolioName('')
     setSavePortfolioError('')
-
     await loadSavedPortfolios()
+    
+    if (data.portfolio?.id) {
+      await loadSavedPortfolio(data.portfolio.id)
+    }
 
   } catch (error) {
     console.error('Save portfolio error:', error)
@@ -538,6 +544,13 @@ const handleDeletePortfolio = async (portfolioId) => {
     return;
   }
 
+  if (!selectedSavedPortfolio?.id) {
+    setUploadError(
+      "Please select a saved portfolio before uploading."
+    );
+    return;
+  }
+
   setUploading(true);
   setUploadError("");
   setError("");
@@ -548,17 +561,13 @@ const handleDeletePortfolio = async (portfolioId) => {
       throw new Error("Please select a valid portfolio JSON file.");
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
+    const formData = new FormData()
+    formData.append('file', file)
     
-
-    if (selectedSavedPortfolio?.id) {
-      formData.append(
-        "portfolio_id",
-        String(selectedSavedPortfolio.id)
-      );
-    }
+    formData.append(
+      'portfolio_id',
+      String(selectedSavedPortfolio.id)
+    )
 
     const response = await fetch(
       `${API_URL}/portfolio/upload`,

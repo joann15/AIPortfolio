@@ -1250,12 +1250,10 @@ const handleDeletePortfolio = async (portfolioId) => {
       </strong>
 
       <span>
-        Uploaded{' '}
+        Uploaded:{' '}
         {file.uploaded_at
-          ? new Date(
-              file.uploaded_at
-            ).toLocaleString()
-          : 'Unknown'}
+        ? new Date(file.uploaded_at).toLocaleString()
+        : 'Unknown'}
       </span>
 
     </div>
@@ -1738,13 +1736,10 @@ const handleDeletePortfolio = async (portfolioId) => {
       </div>
 
       <div className="comparison-date">
-
-        Compared with{" "}
-
+        Change since{" "}
         {new Date(
           performance.previous_snapshot.date
-        ).toLocaleDateString()}
-
+          ).toLocaleDateString()}
       </div>
 
     </>

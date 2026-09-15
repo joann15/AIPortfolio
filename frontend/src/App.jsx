@@ -1742,6 +1742,123 @@ const handleDeletePortfolio = async (portfolioId) => {
           ).toLocaleDateString()}
       </div>
 
+      <div className="comparison-explanation">
+
+  <h3>What drove the change?</h3>
+
+  <p>
+    Your portfolio changed by{' '}
+    <strong>
+      {formatSignedMoney(
+        performance.portfolio_change.amount
+      )}
+    </strong>{' '}
+    (
+    <strong>
+      {formatPercent(
+        performance.portfolio_change.percentage
+      )}
+    </strong>
+    ) compared with the previous snapshot.
+  </p>
+
+  <div className="comparison-contributors">
+
+    <div className="contributor-column">
+
+      <h4>Positive contributors</h4>
+
+      {performance.positive_contributors?.length ? (
+
+        performance.positive_contributors
+          .slice(0, 5)
+          .map((holding) => (
+
+            <div
+              className="comparison-contributor"
+              key={holding.ticker}
+            >
+
+              <div>
+                <strong>
+                  {holding.ticker}
+                </strong>
+
+                <span>
+                  {holding.company_name}
+                </span>
+              </div>
+
+              <strong className="positive">
+                {formatSignedMoney(
+                  holding.change
+                )}
+              </strong>
+
+            </div>
+
+          ))
+
+      ) : (
+
+        <p className="empty-contributor-message">
+          No positive contributors.
+        </p>
+
+      )}
+
+    </div>
+
+
+    <div className="contributor-column">
+
+      <h4>Negative contributors</h4>
+
+      {performance.negative_contributors?.length ? (
+
+        performance.negative_contributors
+          .slice(0, 5)
+          .map((holding) => (
+
+            <div
+              className="comparison-contributor"
+              key={holding.ticker}
+            >
+
+              <div>
+                <strong>
+                  {holding.ticker}
+                </strong>
+
+                <span>
+                  {holding.company_name}
+                </span>
+              </div>
+
+              <strong className="negative">
+                {formatSignedMoney(
+                  holding.change
+                )}
+              </strong>
+
+            </div>
+
+          ))
+
+      ) : (
+
+        <p className="empty-contributor-message">
+          No negative contributors.
+        </p>
+
+      )}
+
+    </div>
+
+  </div>
+
+</div>
+
     </>
 
   )}

@@ -1183,6 +1183,36 @@ def get_portfolio_files(
             for item in files
         ]
     }
+@app.delete("/portfolios/{portfolio_id}/files/{file_id}")
+def delete_portfolio_file(
+    portfolio_id: int,
+    file_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    history_record = (
+        db.query(PortfolioHistory)
+        .filter(
+            PortfolioHistory.id == file_id,
+            PortfolioHistory.portfolio_id == portfolio_id,
+            PortfolioHistory.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if history_record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Portfolio file history record not found."
+        )
+
+    db.delete(history_record)
+    db.commit()
+
+    return {
+        "message": "Portfolio file history deleted successfully.",
+        "file_id": file_id
+    }
 
 @app.get("/portfolios/{portfolio_id}")
 def get_saved_portfolio(

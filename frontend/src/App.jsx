@@ -374,6 +374,50 @@ function App() {
   }
 }
 
+async function deletePortfolioFile(fileId) {
+  const token = localStorage.getItem('access_token');
+
+  if (!token || !selectedSavedPortfolio?.id) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    'Delete this file from the portfolio history?'
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/portfolios/${selectedSavedPortfolio.id}/files/${fileId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || 'Could not delete portfolio file.'
+      );
+    }
+
+    await loadPortfolioFiles(selectedSavedPortfolio.id);
+
+  } catch (error) {
+    console.error('Delete file error:', error);
+    setError(
+      error.message || 'Could not delete portfolio file.'
+    );
+  }
+}
+
 const loadPortfolioPerformance = async (portfolioId) => {
     const token = localStorage.getItem("access_token")
 
@@ -1194,31 +1238,39 @@ const handleDeletePortfolio = async (portfolioId) => {
 
         {portfolioFiles.map((file) => (
 
-          <div
-            className="portfolio-file-item"
-            key={file.id}
-          >
+  <div
+    className="portfolio-file-item"
+    key={file.id}
+  >
 
-            <div className="portfolio-file-info">
+    <div className="portfolio-file-info">
 
-              <strong>
-                {file.filename}
-              </strong>
+      <strong>
+        {file.filename}
+      </strong>
 
-              <span>
-                Uploaded{' '}
-                {file.uploaded_at
-                  ? new Date(
-                      file.uploaded_at
-                    ).toLocaleString()
-                  : 'Unknown'}
-              </span>
+      <span>
+        Uploaded{' '}
+        {file.uploaded_at
+          ? new Date(
+              file.uploaded_at
+            ).toLocaleString()
+          : 'Unknown'}
+      </span>
 
-            </div>
+    </div>
 
-          </div>
+    <button
+      type="button"
+      className="delete-file-button"
+      onClick={() => deletePortfolioFile(file.id)}
+    >
+      Delete
+    </button>
 
-        ))}
+  </div>
+
+))}
 
       </div>
 

@@ -1833,12 +1833,21 @@ def get_portfolio_performance(
             continue
 
         try:
+            print(
+                f"Fetching historical news for {ticker}: "
+                f"{start_date} to {end_date}"
+            )
 
             articles = get_historical_news(
                 ticker=ticker,
                 company_name=company_name,
                 start_date=start_date,
                 end_date=end_date
+            )
+
+            print(
+                f"Historical news returned for {ticker}: "
+                f"{len(articles)} articles"
             )
 
             historical_news[ticker] = articles

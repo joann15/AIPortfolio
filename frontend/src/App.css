@@ -1724,3 +1724,11 @@ button {
   line-height: 1.4;
   opacity: 0.75;
 }
+
+.historical-explanation {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.9;
+}

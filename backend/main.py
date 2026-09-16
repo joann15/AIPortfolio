@@ -25,6 +25,11 @@ from models import (
     HoldingSnapshot,
 )
 from historical_news import get_historical_news
+
+sys.path.append(
+    str(Path(__file__).resolve().parent.parent)
+)
+from customer_chat import generate_historical_explanation
 # ============================================================
 # AUTHENTICATION
 # ============================================================
@@ -1906,35 +1911,25 @@ def get_portfolio_performance(
         previous_holdings=previous_holdings,
         current_holdings=current_holdings
     )
-
-        # --------------------------------------------------------
-    # GET HISTORICAL NEWS FOR CHANGED HOLDINGS
-    # --------------------------------------------------------
-
     historical_news = {}
+    historical_explanations = {}
 
-    # Convert snapshot dates into Alpha Vantage format.
-    previous_date = previous_snapshot.snapshot_date.strftime(
-        "%Y%m%d"
+    start_date = previous_snapshot.snapshot_date.strftime(
+        "%Y%m%dT%H%M"
     )
 
-    current_date = current_snapshot.snapshot_date.strftime(
-        "%Y%m%d"
+    end_date = current_snapshot.snapshot_date.strftime(
+        "%Y%m%dT%H%M"
     )
 
-    start_date = f"{previous_date}T0000"
-    end_date = f"{current_date}T2359"
-
-    # Only retrieve news for holdings that actually
-    # contributed to the portfolio change.
     changed_holdings = (
         comparison["positive_contributors"]
         + comparison["negative_contributors"]
     )
 
     for holding in changed_holdings:
-
         ticker = holding.get("ticker")
+
         company_name = holding.get(
             "company_name",
             ticker
@@ -1960,16 +1955,42 @@ def get_portfolio_performance(
                 f"Historical news returned for {ticker}: "
                 f"{len(articles)} articles"
             )
-
             historical_news[ticker] = articles
 
-        except Exception as e:
+            try:
+                explanation = generate_historical_explanation(
+                    ticker=ticker,
+                    company_name=company_name,
+                    movement=holding,
+                    historical_news=articles
+                )
+                historical_explanations[ticker] = explanation
 
+                print(
+                    f"Historical explanation generated for {ticker}"
+                )
+
+            except Exception as ai_error:
+                print(
+                    f"Historical explanation failed for "
+                    f"{ticker}: {ai_error}"
+                )
+
+                historical_explanations[ticker] = (
+                    "No AI historical explanation is available."
+                )
+
+        except Exception as e:
             print(
                 f"Historical news failed for {ticker}: {e}"
             )
 
             historical_news[ticker] = []
+            historical_explanations[ticker] = (
+                "No historical news explanation is available."
+            )
+
+
     # --------------------------------------------------------
     # RETURN RESULT
     # --------------------------------------------------------
@@ -2003,7 +2024,10 @@ def get_portfolio_performance(
             comparison["negative_contributors"],
 
         "historical_news":
-            historical_news
+            historical_news,
+
+        "historical_explanations":
+            historical_explanations
     }
 
     #Portfolio upload endpoint

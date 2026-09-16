@@ -455,6 +455,193 @@ no headers.
 
 
 # ============================================================
+# GENERATE HISTORICAL PERFORMANCE EXPLANATION
+# ============================================================
+
+def generate_historical_explanation(
+    ticker,
+    company_name,
+    movement,
+    historical_news
+):
+    """
+    Generate a short explanation of a historical portfolio
+    movement using only the observed movement and retrieved
+    historical news.
+
+    The function does NOT determine causation. It only provides
+    possible historical context based on the supplied evidence.
+    """
+
+    # --------------------------------------------------------
+    # SYSTEM PROMPT
+    # --------------------------------------------------------
+
+    system_prompt = """
+You are a customer-facing AI portfolio analysis assistant.
+
+Your task is to explain the possible historical context behind
+a stock's observed price movement using ONLY the supplied
+portfolio movement data and retrieved historical news.
+
+============================================================
+GROUNDING RULES
+============================================================
+
+1. NEVER invent facts, numbers, news, dates, events, or causes.
+
+2. The observed price movement is factual data supplied to you.
+   Report it accurately.
+
+3. Historical news is contextual evidence only.
+
+4. Do NOT claim that a news article caused the stock movement.
+
+5. Do NOT use causal language such as:
+
+   "caused"
+   "drove"
+   "resulted in"
+   "led to"
+   "was responsible for"
+
+6. Prefer cautious language such as:
+
+   "possible historical context"
+   "consistent with"
+   "aligned with"
+   "the available news indicates"
+   "the news coverage during this period included"
+
+7. If the available news does not provide a reasonable
+   contextual explanation, say that no clear news-based
+   explanation was found.
+
+8. Do not invent an explanation simply because an article exists.
+
+9. Do not provide investment advice.
+
+10. Do not recommend buying, selling, or holding the stock.
+
+11. Keep the explanation concise and easy to understand.
+
+12. If mentioning the stock, always include its ticker.
+
+13. Clearly distinguish between:
+    - observed movement
+    - historical news
+    - possible context
+    - proven causation
+
+14. Never state or imply that the retrieved news definitively
+    explains the price movement.
+
+============================================================
+OUTPUT FORMAT
+============================================================
+
+Return 1-2 short sentences in plain English.
+
+Start with:
+
+"Possible historical context:"
+
+Do not use markdown.
+Do not use bullet points.
+Do not include a heading.
+"""
+
+
+    # --------------------------------------------------------
+    # USER PROMPT
+    # --------------------------------------------------------
+
+    user_prompt = f"""
+STOCK:
+
+Ticker: {ticker}
+Company: {company_name}
+
+============================================================
+OBSERVED MOVEMENT
+============================================================
+
+{json.dumps(
+    movement,
+    indent=2,
+    ensure_ascii=False
+)}
+
+============================================================
+HISTORICAL NEWS
+============================================================
+
+{json.dumps(
+    historical_news,
+    indent=2,
+    ensure_ascii=False
+)}
+
+============================================================
+INSTRUCTIONS
+============================================================
+
+Explain the possible historical context for the observed
+movement using ONLY the supplied information.
+
+Do not invent missing information.
+
+Do not claim causation.
+
+If the available news does not provide useful context,
+clearly say that no clear news-based explanation was found.
+
+Return only the final 1-2 sentence explanation.
+"""
+
+
+    # --------------------------------------------------------
+    # OPENAI REQUEST
+    # --------------------------------------------------------
+
+    try:
+
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            temperature=0.2,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                },
+            ],
+        )
+
+    except Exception as error:
+
+        raise RuntimeError(
+            f"OpenAI historical explanation request failed: {error}"
+        )
+
+    # --------------------------------------------------------
+    # GET EXPLANATION
+    # --------------------------------------------------------
+
+    explanation = response.choices[0].message.content
+
+    if not explanation or not explanation.strip():
+
+        raise RuntimeError(
+            "OpenAI returned an empty historical explanation."
+        )
+
+    return explanation.strip()
+
+# ============================================================
 # CUSTOMER CHAT CLI
 # ============================================================
 

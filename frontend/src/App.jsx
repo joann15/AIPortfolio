@@ -1792,6 +1792,11 @@ const handleDeletePortfolio = async (portfolioId) => {
             {holding.movement_reason.explanation}
           </small>
         )}
+        {performance.historical_explanations?.[holding.ticker] && (
+          <small className="historical-explanation">
+            {performance.historical_explanations[holding.ticker]}
+            </small>
+        )}
       </div>
 
       <strong className="positive">
@@ -1842,6 +1847,11 @@ const handleDeletePortfolio = async (portfolioId) => {
           <small className="movement-reason">
             {holding.movement_reason.explanation}
           </small>
+        )}
+        {performance.historical_explanations?.[holding.ticker] && (
+          <small className="historical-explanation">
+            {performance.historical_explanations[holding.ticker]}
+            </small>
         )}
       </div>
 

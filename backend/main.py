@@ -16,8 +16,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from pwdlib import PasswordHash
 from datetime import datetime
-
-from streamlit import status
 from database import Base, engine, get_db
 from models import (
     User,

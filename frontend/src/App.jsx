@@ -1770,35 +1770,41 @@ const handleDeletePortfolio = async (portfolioId) => {
 
       {performance.positive_contributors?.length ? (
 
-        performance.positive_contributors
-        .map((holding) => (
+  performance.positive_contributors
+  .map((holding) => (
 
-            <div
-              className="comparison-contributor"
-              key={holding.ticker}
-            >
+    <div
+      className="comparison-contributor"
+      key={holding.ticker}
+    >
 
-              <div>
-                <strong>
-                  {holding.ticker}
-                </strong>
+      <div>
+        <strong>
+          {holding.ticker}
+        </strong>
 
-                <span>
-                  {holding.company_name}
-                </span>
-              </div>
+        <span>
+          {holding.company_name}
+        </span>
 
-              <strong className="positive">
-                {formatSignedMoney(
-                  holding.change
-                )}
-              </strong>
+        {holding.movement_reason && (
+          <small className="movement-reason">
+            {holding.movement_reason.explanation}
+          </small>
+        )}
+      </div>
 
-            </div>
+      <strong className="positive">
+        {formatSignedMoney(
+          holding.change
+        )}
+      </strong>
 
-          ))
+    </div>
 
-      ) : (
+  ))
+
+) : (
 
         <p className="empty-contributor-message">
           No positive contributors.
@@ -1815,35 +1821,41 @@ const handleDeletePortfolio = async (portfolioId) => {
 
       {performance.negative_contributors?.length ? (
 
-        performance.negative_contributors
-        .map((holding) => (
+  performance.negative_contributors
+  .map((holding) => (
 
-            <div
-              className="comparison-contributor"
-              key={holding.ticker}
-            >
+    <div
+      className="comparison-contributor"
+      key={holding.ticker}
+    >
 
-              <div>
-                <strong>
-                  {holding.ticker}
-                </strong>
+      <div>
+        <strong>
+          {holding.ticker}
+        </strong>
 
-                <span>
-                  {holding.company_name}
-                </span>
-              </div>
+        <span>
+          {holding.company_name}
+        </span>
 
-              <strong className="negative">
-                {formatSignedMoney(
-                  holding.change
-                )}
-              </strong>
+        {holding.movement_reason && (
+          <small className="movement-reason">
+            {holding.movement_reason.explanation}
+          </small>
+        )}
+      </div>
 
-            </div>
+      <strong className="negative">
+        {formatSignedMoney(
+          holding.change
+        )}
+      </strong>
 
-          ))
+    </div>
 
-      ) : (
+  ))
+
+) : (
 
         <p className="empty-contributor-message">
           No negative contributors.

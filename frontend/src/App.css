@@ -1716,3 +1716,11 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.movement-reason {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.75;
+}

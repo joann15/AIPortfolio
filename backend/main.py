@@ -1646,59 +1646,60 @@ def compare_snapshot_records(
                     "The holding value did not change."
                 )
 
-                holding_changes.append({
-                    "ticker": ticker,
-                    "company_name": company_name,
-                    "movement_reason": {
-                        "type": movement_type,
-                        "explanation": movement_explanation
-                    },
-                    "previous_shares": (
-                        round(previous_shares, 4)
-                        if previous_shares is not None
-                        else None
-                    ),
+        holding_changes.append({
+            "ticker": ticker,
+            "company_name": company_name,
+            "movement_reason": {
+            "type": movement_type,
+            "explanation": movement_explanation
+            },
 
-                    "current_shares": (
-                        round(current_shares, 4)
-                        if current_shares is not None
-                        else None
-                    ),
+            "previous_shares": (
+                round(previous_shares, 4)
+                if previous_shares is not None
+                else None
+            ),
 
-                    "previous_price": (
-                        round(previous_price, 2)
-                        if previous_price is not None
-                        else None
-                    ),
+            "current_shares": (
+                round(current_shares, 4)
+                if current_shares is not None
+                else None
+                ),
 
-                    "current_price": (
-                        round(current_price, 2)
-                        if current_price is not None
-                        else None
-                    ),
+            "previous_price": (
+                round(previous_price, 2)
+                if previous_price is not None
+                else None
+            ),
 
-                    "previous_value": round(
-                        previous_holding_value,
-                        2
-                    ),
+            "current_price": (
+                round(current_price, 2)
+                if current_price is not None
+                else None
+            ),
 
-                    "current_value": round(
-                        current_holding_value,
-                        2
-                    ),
+            "previous_value": round(
+                previous_holding_value,
+                2
+            ),
 
-                    "change": round(
-                        change,
-                        2
-                    ),
+            "current_value": round(
+                current_holding_value,
+                2
+            ),
 
-                    "change_percent": (
-                        round(change_percent, 2)
-                        if change_percent is not None
-                        else None
-                    ),
-                    "status": status
-                })
+            "change": round(
+                change,
+                2
+            ),
+
+            "change_percent": (
+                round(change_percent, 2)
+                if change_percent is not None
+                else None
+            ),
+            "status": status
+        })
 
     # --------------------------------------------------------
     # SORT BY LARGEST CHANGE

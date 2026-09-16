@@ -16,6 +16,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from pwdlib import PasswordHash
 from datetime import datetime
+
+from streamlit import status
 from database import Base, engine, get_db
 from models import (
     User,
@@ -1567,10 +1569,12 @@ def compare_snapshot_records(
         else:
             company_name = previous_holding.company_name
 
-        # ----------------------------------------------------
-        # PRICE AND SHARE INFORMATION
-        # ----------------------------------------------------
+        
 
+        # ----------------------------------------------------
+        # SHARES AND PRICE COMPARISON
+        # # ----------------------------------------------------
+         
         previous_shares = (
             previous_holding.shares_owned
             if previous_holding
@@ -1595,56 +1599,108 @@ def compare_snapshot_records(
             else None
         )
 
-        holding_changes.append({
-            "ticker": ticker,
-            "company_name": company_name,
-            "previous_shares": (
-                round(previous_shares, 4)
-                if previous_shares is not None
-                else None
-            ),
+        if status == "added":
+            movement_type = "new_holding"
+            movement_explanation = (
+                "This holding was added in the current snapshot."
+            )
 
-            "current_shares": (
-                round(current_shares, 4)
-                if current_shares is not None
-                else None
-            ),
+        elif status == "removed":
+            movement_type = "removed_holding"
+            movement_explanation = (
+                "This holding was removed in the current snapshot."
+            )
 
-            "previous_price": (
-                round(previous_price, 2)
-                if previous_price is not None
-                else None
-            ),
+        else:
+            shares_changed = (
+                previous_shares != current_shares
+                )
 
-            "current_price": (
-                round(current_price, 2)
-                if current_price is not None
-                else None
-            ),
+            price_changed = (
+                previous_price is not None
+                and current_price is not None
+                and previous_price != current_price
+            )
 
-            "previous_value": round(
-                previous_holding_value,
-                2
-            ),
+            if shares_changed and price_changed:
+                movement_type = "price_and_share_change"
+                movement_explanation = (
+                    "The holding value changed because both the "
+                    "number of shares and the market price changed."
+                )
+            elif shares_changed:
+                movement_type = "share_count_change"
+                movement_explanation = (
+                    "The holding value changed because the "
+                    "number of shares changed."
+                )
 
-            "current_value": round(
-                current_holding_value,
-                2
-            ),
+            elif price_changed:
+                movement_type = "price_movement"
+                movement_explanation = (
+                    "The holding value changed because the "
+                    "market price changed while the share count remained unchanged."
+                )
 
-            "change": round(
-                change,
-                2
-            ),
+            else:
+                movement_type = "no_change"
+                movement_explanation = (
+                    "The holding value did not change."
+                )
 
-            "change_percent": (
-                round(change_percent, 2)
-                if change_percent is not None
-                else None
-            ),
+                holding_changes.append({
+                    "ticker": ticker,
+                    "company_name": company_name,
+                    "movement_reason": {
+                        "type": movement_type,
+                        "explanation": movement_explanation
+                    },
+                    "previous_shares": (
+                        round(previous_shares, 4)
+                        if previous_shares is not None
+                        else None
+                    ),
 
-            "status": status
-        })
+                    "current_shares": (
+                        round(current_shares, 4)
+                        if current_shares is not None
+                        else None
+                    ),
+
+                    "previous_price": (
+                        round(previous_price, 2)
+                        if previous_price is not None
+                        else None
+                    ),
+
+                    "current_price": (
+                        round(current_price, 2)
+                        if current_price is not None
+                        else None
+                    ),
+
+                    "previous_value": round(
+                        previous_holding_value,
+                        2
+                    ),
+
+                    "current_value": round(
+                        current_holding_value,
+                        2
+                    ),
+
+                    "change": round(
+                        change,
+                        2
+                    ),
+
+                    "change_percent": (
+                        round(change_percent, 2)
+                        if change_percent is not None
+                        else None
+                    ),
+                    "status": status
+                })
 
     # --------------------------------------------------------
     # SORT BY LARGEST CHANGE

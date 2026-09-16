@@ -24,8 +24,7 @@ from models import (
     PortfolioSnapshot,
     HoldingSnapshot,
 )
-
-
+from historical_news import get_historical_news
 # ============================================================
 # AUTHENTICATION
 # ============================================================
@@ -1797,6 +1796,60 @@ def get_portfolio_performance(
         current_holdings=current_holdings
     )
 
+        # --------------------------------------------------------
+    # GET HISTORICAL NEWS FOR CHANGED HOLDINGS
+    # --------------------------------------------------------
+
+    historical_news = {}
+
+    # Convert snapshot dates into Alpha Vantage format.
+    previous_date = previous_snapshot.snapshot_date.strftime(
+        "%Y%m%d"
+    )
+
+    current_date = current_snapshot.snapshot_date.strftime(
+        "%Y%m%d"
+    )
+
+    start_date = f"{previous_date}T0000"
+    end_date = f"{current_date}T2359"
+
+    # Only retrieve news for holdings that actually
+    # contributed to the portfolio change.
+    changed_holdings = (
+        comparison["positive_contributors"]
+        + comparison["negative_contributors"]
+    )
+
+    for holding in changed_holdings:
+
+        ticker = holding.get("ticker")
+        company_name = holding.get(
+            "company_name",
+            ticker
+        )
+
+        if not ticker:
+            continue
+
+        try:
+
+            articles = get_historical_news(
+                ticker=ticker,
+                company_name=company_name,
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            historical_news[ticker] = articles
+
+        except Exception as e:
+
+            print(
+                f"Historical news failed for {ticker}: {e}"
+            )
+
+            historical_news[ticker] = []
     # --------------------------------------------------------
     # RETURN RESULT
     # --------------------------------------------------------
@@ -1827,7 +1880,10 @@ def get_portfolio_performance(
             comparison["positive_contributors"],
 
         "negative_contributors":
-            comparison["negative_contributors"]
+            comparison["negative_contributors"],
+
+        "historical_news":
+            historical_news
     }
 
     #Portfolio upload endpoint

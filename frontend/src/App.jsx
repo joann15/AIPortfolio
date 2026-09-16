@@ -1771,8 +1771,7 @@ const handleDeletePortfolio = async (portfolioId) => {
       {performance.positive_contributors?.length ? (
 
         performance.positive_contributors
-          .slice(0, 5)
-          .map((holding) => (
+        .map((holding) => (
 
             <div
               className="comparison-contributor"
@@ -1817,8 +1816,7 @@ const handleDeletePortfolio = async (portfolioId) => {
       {performance.negative_contributors?.length ? (
 
         performance.negative_contributors
-          .slice(0, 5)
-          .map((holding) => (
+        .map((holding) => (
 
             <div
               className="comparison-contributor"
@@ -1873,12 +1871,10 @@ const handleDeletePortfolio = async (portfolioId) => {
 
             <div className="section-heading">
 
-              <h2>Top Contributors</h2>
-
+              <h2>Today's Top Contributors</h2>
               <p>
-                Holdings with the largest positive and
-                negative impact today
-              </p>
+                Holdings with the largest impact on today's portfolio movement.
+                </p>
 
             </div>
 

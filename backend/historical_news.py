@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+MARKETAUX_API_KEY = os.getenv("MARKETAUX_API_KEY")
 
-ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query"
+MARKETAUX_URL = "https://api.marketaux.com/v1/news/all"
 
-HISTORICAL_RELEVANCE_THRESHOLD = 0.80
+HISTORICAL_RELEVANCE_THRESHOLD = 0.20
 MAX_HISTORICAL_ARTICLES = 3
 
 
@@ -23,6 +23,7 @@ def calculate_article_rank(article, ticker):
 
     title = (article.get("title") or "").lower()
     summary = (article.get("summary") or "").lower()
+
     ticker_lower = ticker.lower()
 
     relevance_score = article.get("relevance_score") or 0
@@ -34,10 +35,12 @@ def calculate_article_rank(article, ticker):
     if ticker_lower in title:
         title_bonus = 0.30
 
-    # Give extra weight to articles that discuss
-    # stock/market movement.
+    # Give extra weight to articles discussing
+    # stock or market movement.
     movement_keywords = [
         "stock",
+        "stocks",
+        "share",
         "shares",
         "rise",
         "rises",
@@ -53,13 +56,23 @@ def calculate_article_rank(article, ticker):
         "price",
         "trading",
         "investors",
-        "spending concerns",
-        "stock movement",
+        "investment",
+        "spending",
+        "revenue",
+        "earnings",
+        "forecast",
+        "analyst",
+        "rating",
+        "buy",
+        "sell",
+        "upgrade",
+        "downgrade",
     ]
 
     movement_bonus = 0
 
     for keyword in movement_keywords:
+
         if keyword in title or keyword in summary:
             movement_bonus += 0.05
 
@@ -82,9 +95,9 @@ def get_historical_news(
     limit=50
 ):
     """
-    Retrieve relevant historical news for one ticker.
+    Retrieve relevant historical news from Marketaux.
 
-    start_date and end_date must use:
+    start_date and end_date should use:
 
         YYYYMMDDTHHMM
 
@@ -94,23 +107,47 @@ def get_historical_news(
         20260915T2359
     """
 
-    if not ALPHA_VANTAGE_API_KEY:
+    if not MARKETAUX_API_KEY:
         raise ValueError(
-            "ALPHA_VANTAGE_API_KEY is missing from the .env file."
+            "MARKETAUX_API_KEY is missing from the .env file."
         )
 
+    # Convert:
+    #
+    # 20260914T0000
+    #
+    # into:
+    #
+    # 2026-09-14T00:00:00
+    #
+    published_after = (
+        f"{start_date[0:4]}-"
+        f"{start_date[4:6]}-"
+        f"{start_date[6:8]}T"
+        f"{start_date[9:11]}:"
+        f"{start_date[11:13]}:00"
+    )
+
+    published_before = (
+        f"{end_date[0:4]}-"
+        f"{end_date[4:6]}-"
+        f"{end_date[6:8]}T"
+        f"{end_date[9:11]}:"
+        f"{end_date[11:13]}:59"
+    )
+
     params = {
-        "function": "NEWS_SENTIMENT",
-        "tickers": ticker,
-        "time_from": start_date,
-        "time_to": end_date,
-        "sort": "EARLIEST",
-        "limit": limit,
-        "apikey": ALPHA_VANTAGE_API_KEY,
+        "api_token": MARKETAUX_API_KEY,
+        "symbols": ticker,
+        "language": "en",
+        "filter_entities": "true",
+        "published_after": published_after,
+        "published_before": published_before,
+        "limit": min(limit, 50),
     }
 
     response = requests.get(
-        ALPHA_VANTAGE_URL,
+        MARKETAUX_URL,
         params=params,
         timeout=30
     )
@@ -119,31 +156,17 @@ def get_historical_news(
 
     data = response.json()
 
-    print("========== ALPHA VANTAGE HISTORICAL NEWS ==========")
+    print("MARKETAUX HISTORICAL NEWS")
     print("Ticker:", ticker)
-    print("Start:", start_date)
-    print("End:", end_date)
+    print("Company:", company_name)
+    print("Start:", published_after)
+    print("End:", published_before)
     print("Status:", response.status_code)
     print("Response keys:", list(data.keys()))
+    print("Article count:", len(data.get("data", [])))
+    print("===============================================")
 
-    if "Note" in data:
-        print("ALPHA VANTAGE NOTE:", data["Note"])
-
-    if "Information" in data:
-        print("ALPHA VANTAGE INFORMATION:", data["Information"])
-
-    print("Feed count:", len(data.get("feed", [])))
-    print("====================================================")
-
-    # Alpha Vantage may return these instead of normal data
-    # when the API limit is reached or another issue occurs.
-    if "Note" in data:
-        raise RuntimeError(data["Note"])
-
-    if "Information" in data:
-        raise RuntimeError(data["Information"])
-
-    articles = data.get("feed", [])
+    articles = data.get("data", [])
 
     relevant_articles = []
 
@@ -153,90 +176,158 @@ def get_historical_news(
 
     for article in articles:
 
-        title = article.get("title", "")
-        summary = article.get("summary", "")
+        title = article.get("title") or ""
+        description = article.get("description") or ""
 
         title_lower = title.lower()
-        summary_lower = summary.lower()
+        description_lower = description.lower()
 
-        # Find Alpha Vantage's ticker-specific sentiment data.
-        ticker_sentiment = None
+        # ------------------------------------------------
+        # Find the entity information for this ticker
+        # ------------------------------------------------
 
-        for item in article.get("ticker_sentiment", []):
+        ticker_entity = None
 
-            if item.get("ticker", "").upper() == ticker_upper:
-                ticker_sentiment = item
+        for entity in article.get("entities", []):
+
+            symbol = (
+                entity.get("symbol") or ""
+            ).upper()
+
+            if symbol == ticker_upper:
+                ticker_entity = entity
                 break
 
-        relevance_score = 0
+        # ------------------------------------------------
+        # Calculate Marketaux relevance
+        # ------------------------------------------------
 
-        if ticker_sentiment:
+        entity_match_score = 0
 
-            relevance_score = float(
-                ticker_sentiment.get(
-                    "relevance_score",
-                    0
+        if ticker_entity:
+
+            try:
+                entity_match_score = float(
+                    ticker_entity.get(
+                        "match_score",
+                        0
+                    )
                 )
-            )
+            except (TypeError, ValueError):
 
-        # Check whether the stock is directly mentioned
-        # in the article title.
-        ticker_in_title = ticker_lower in title_lower
+                entity_match_score = 0
 
-        company_in_title = company_lower in title_lower
+        # Marketaux match_score is not necessarily 0-1.
+        # Normalize it for our ranking system.
 
-        # Strong Alpha Vantage relevance.
-        strong_relevance = (
-            relevance_score >= HISTORICAL_RELEVANCE_THRESHOLD
+        normalized_entity_score = min(
+            entity_match_score / 100,
+            1.0
         )
 
-        # Keep the article if:
-        #
-        # 1. The ticker is in the title
-        # OR
-        # 2. The company name is in the title
-        # OR
-        # 3. Alpha Vantage gives it a strong relevance score.
-        is_relevant = (
+        # ------------------------------------------------
+        # Direct mention checks
+        # ------------------------------------------------
+
+        ticker_in_title = (
+            ticker_lower in title_lower
+        )
+
+        company_in_title = (
+            company_lower in title_lower
+        )
+
+        ticker_in_description = (
+            ticker_lower in description_lower
+        )
+
+        company_in_description = (
+            company_lower in description_lower
+        )
+
+        direct_mention = (
             ticker_in_title
             or company_in_title
-            or strong_relevance
+            or ticker_in_description
+            or company_in_description
+        )
+
+        # ------------------------------------------------
+        # Determine relevance
+        # ------------------------------------------------
+
+        relevance_score = normalized_entity_score
+
+        if direct_mention:
+            relevance_score = max(
+                relevance_score,
+                0.50
+            )
+
+        # Keep only articles that are actually relevant
+        # to the requested stock.
+
+        is_relevant = (
+            direct_mention
+            or normalized_entity_score
+            >= HISTORICAL_RELEVANCE_THRESHOLD
         )
 
         if not is_relevant:
             continue
 
+        # ------------------------------------------------
+        # Sentiment
+        # ------------------------------------------------
+
         sentiment_score = None
+
+        if ticker_entity:
+
+            try:
+                sentiment_score = float(
+                    ticker_entity.get(
+                        "sentiment_score",
+                        0
+                    )
+                )
+
+            except (TypeError, ValueError):
+
+                sentiment_score = None
+
         sentiment_label = None
 
-        if ticker_sentiment:
+        if sentiment_score is not None:
 
-            sentiment_score = float(
-                ticker_sentiment.get(
-                    "ticker_sentiment_score",
-                    0
-                )
-            )
+            if sentiment_score > 0.15:
+                sentiment_label = "Bullish"
 
-            sentiment_label = ticker_sentiment.get(
-                "ticker_sentiment_label"
-            )
+            elif sentiment_score < -0.15:
+                sentiment_label = "Bearish"
+
+            else:
+                sentiment_label = "Neutral"
+
+        # ------------------------------------------------
+        # Store in the same structure your frontend expects
+        # ------------------------------------------------
 
         relevant_articles.append({
             "title": title,
-            "summary": summary,
+            "summary": description,
             "url": article.get("url"),
             "source": article.get("source"),
-            "published_at": article.get(
-                "time_published"
-            ),
+            "published_at": article.get("published_at"),
             "relevance_score": relevance_score,
             "sentiment_score": sentiment_score,
             "sentiment_label": sentiment_label,
         })
 
-    # Rank the relevant articles so that the most useful
-    # articles for explaining price movement appear first.
+    # ------------------------------------------------
+    # Rank articles
+    # ------------------------------------------------
+
     relevant_articles.sort(
         key=lambda article: calculate_article_rank(
             article,
@@ -245,7 +336,10 @@ def get_historical_news(
         reverse=True
     )
 
-    # Return only the strongest articles.
+    # ------------------------------------------------
+    # Return strongest articles only
+    # ------------------------------------------------
+
     return relevant_articles[
         :MAX_HISTORICAL_ARTICLES
     ]

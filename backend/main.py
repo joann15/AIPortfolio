@@ -1567,26 +1567,82 @@ def compare_snapshot_records(
         else:
             company_name = previous_holding.company_name
 
+        # ----------------------------------------------------
+        # PRICE AND SHARE INFORMATION
+        # ----------------------------------------------------
+
+        previous_shares = (
+            previous_holding.shares_owned
+            if previous_holding
+            else 0
+        )
+
+        current_shares = (
+            current_holding.shares_owned
+            if current_holding
+            else 0
+        )
+
+        previous_price = (
+            previous_holding.current_market_price
+            if previous_holding
+            else None
+        )
+
+        current_price = (
+            current_holding.current_market_price
+            if current_holding
+            else None
+        )
+
         holding_changes.append({
             "ticker": ticker,
             "company_name": company_name,
+            "previous_shares": (
+                round(previous_shares, 4)
+                if previous_shares is not None
+                else None
+            ),
+
+            "current_shares": (
+                round(current_shares, 4)
+                if current_shares is not None
+                else None
+            ),
+
+            "previous_price": (
+                round(previous_price, 2)
+                if previous_price is not None
+                else None
+            ),
+
+            "current_price": (
+                round(current_price, 2)
+                if current_price is not None
+                else None
+            ),
+
             "previous_value": round(
                 previous_holding_value,
                 2
             ),
+
             "current_value": round(
                 current_holding_value,
                 2
             ),
+
             "change": round(
                 change,
                 2
             ),
+
             "change_percent": (
                 round(change_percent, 2)
                 if change_percent is not None
                 else None
             ),
+
             "status": status
         })
 

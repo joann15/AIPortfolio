@@ -119,6 +119,22 @@ def get_historical_news(
 
     data = response.json()
 
+    print("========== ALPHA VANTAGE HISTORICAL NEWS ==========")
+    print("Ticker:", ticker)
+    print("Start:", start_date)
+    print("End:", end_date)
+    print("Status:", response.status_code)
+    print("Response keys:", list(data.keys()))
+
+    if "Note" in data:
+        print("ALPHA VANTAGE NOTE:", data["Note"])
+
+    if "Information" in data:
+        print("ALPHA VANTAGE INFORMATION:", data["Information"])
+
+    print("Feed count:", len(data.get("feed", [])))
+    print("====================================================")
+
     # Alpha Vantage may return these instead of normal data
     # when the API limit is reached or another issue occurs.
     if "Note" in data:
